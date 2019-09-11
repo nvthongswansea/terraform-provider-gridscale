@@ -1,7 +1,7 @@
 package gridscale
 
 import (
-	"github.com/gridscale/gsclient-go"
+	"github.com/nvthongswansea/gsclient-go"
 	"log"
 )
 
@@ -23,7 +23,9 @@ func (c Config) Client() (*gsclient.Client, error) {
 		c.APIUrl,
 		c.UserUUID,
 		c.APIToken,
-		false,
+		true,
+		0,
+		0,
 	)
 	client := gsclient.NewClient(config)
 	log.Print("[INFO] gridscale client configured")

@@ -2,8 +2,8 @@ package service_query
 
 import (
 	"fmt"
-	"github.com/gridscale/gsclient-go"
 	"github.com/hashicorp/terraform/helper/resource"
+	"github.com/nvthongswansea/gsclient-go"
 	"time"
 )
 
@@ -29,8 +29,8 @@ const (
 	ISOImageService     gsService = "isoimage"
 )
 
-//BlockProvisoning blocks until the object's state is not in provisioning anymore
-func BlockProvisoning(client *gsclient.Client, service gsService, id string, timeout time.Duration) error {
+//RetryUntilResourceStatusIsActive blocks until the object's state is not in provisioning anymore
+func RetryUntilResourceStatusIsActive(client *gsclient.Client, service gsService, id string, timeout time.Duration) error {
 	return resource.Retry(timeout, func() *resource.RetryError {
 		time.Sleep(delayFetchingStatus)
 		switch service {

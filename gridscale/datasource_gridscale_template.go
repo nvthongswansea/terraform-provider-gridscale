@@ -1,9 +1,9 @@
 package gridscale
 
 import (
-	"github.com/gridscale/gsclient-go"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/nvthongswansea/gsclient-go"
 )
 
 func dataSourceGridscaleTemplate() *schema.Resource {

@@ -2,8 +2,8 @@ package resource_dependency_crud
 
 import (
 	"fmt"
-	"github.com/gridscale/gsclient-go"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/nvthongswansea/gsclient-go"
 	service_query "github.com/terraform-providers/terraform-provider-gridscale/gridscale/service-query"
 )
 

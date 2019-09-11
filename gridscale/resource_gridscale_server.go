@@ -2,10 +2,10 @@ package gridscale
 
 import (
 	"fmt"
-	"github.com/gridscale/gsclient-go"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/nvthongswansea/gsclient-go"
 	resource_dependency_crud "github.com/terraform-providers/terraform-provider-gridscale/gridscale/resource-dependency-crud"
 	"github.com/terraform-providers/terraform-provider-gridscale/gridscale/service-query"
 	"log"
@@ -493,7 +493,7 @@ func resourceGridscaleServerUpdate(d *schema.ResourceData, meta interface{}) err
 	if err != nil {
 		return err
 	}
-	err = service_query.BlockProvisoning(gsc, service_query.ServerService, d.Id(), d.Timeout(schema.TimeoutUpdate))
+	err = service_query.RetryUntilResourceStatusIsActive(gsc, service_query.ServerService, d.Id(), d.Timeout(schema.TimeoutUpdate))
 	if err != nil {
 		return err
 	}
