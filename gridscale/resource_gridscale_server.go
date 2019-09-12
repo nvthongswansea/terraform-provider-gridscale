@@ -415,7 +415,7 @@ func resourceGridscaleServerDelete(d *schema.ResourceData, meta interface{}) err
 	if err != nil {
 		return err
 	}
-	return service_query.BlockDeletion(client, service_query.ServerService, d.Id())
+	return service_query.RetryUntilDeleted(client, service_query.ServerService, d.Id())
 }
 
 func resourceGridscaleServerUpdate(d *schema.ResourceData, meta interface{}) error {

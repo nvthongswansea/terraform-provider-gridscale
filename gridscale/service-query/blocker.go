@@ -100,41 +100,34 @@ func RetryUntilResourceStatusIsActive(client *gsclient.Client, service gsService
 	})
 }
 
-//BlockDeletion blocks until an object is deleted successfully
-func BlockDeletion(client *gsclient.Client, service gsService, id string) error {
-	timer := time.After(timeoutCheckDeletion)
-	var err error
-	for {
-		select {
-		case <-timer:
-			if err != nil {
-				return fmt.Errorf("Timeout reached when waiting for %v (%v) to be deleted. Latest error: %v", service, id, err)
-			}
-			return fmt.Errorf("Timeout reached when waiting for %v (%v) to be deleted. Object still exists!", service, id)
+//RetryUntilDeleted blocks until an object is deleted successfully
+func RetryUntilDeleted(client *gsclient.Client, service gsService, id string) error {
+	return resource.Retry(timeoutCheckDeletion, func() *resource.RetryError {
+		var err error
+		switch service {
+		case LoadbalancerService:
+			_, err = client.GetLoadBalancer(id)
+		case IPService:
+			_, err = client.GetIP(id)
+		case NetworkService:
+			_, err = client.GetNetwork(id)
+		case ServerService:
+			_, err = client.GetServer(id)
+		case SSHKeyService:
+			_, err = client.GetSshkey(id)
+		case StorageService:
+			_, err = client.GetStorage(id)
 		default:
-			switch service {
-			case LoadbalancerService:
-				_, err = client.GetLoadBalancer(id)
-			case IPService:
-				_, err = client.GetIP(id)
-			case NetworkService:
-				_, err = client.GetNetwork(id)
-			case ServerService:
-				_, err = client.GetServer(id)
-			case SSHKeyService:
-				_, err = client.GetSshkey(id)
-			case StorageService:
-				_, err = client.GetStorage(id)
-			default:
-				return fmt.Errorf("invalid service")
-			}
-			if err != nil {
-				if requestError, ok := err.(gsclient.RequestError); ok {
-					if requestError.StatusCode == 404 {
-						return nil
-					}
+			return resource.NonRetryableError(fmt.Errorf("invalid service"))
+		}
+		if err != nil {
+			if requestError, ok := err.(gsclient.RequestError); ok {
+				if requestError.StatusCode == 404 {
+					return nil
 				}
 			}
+			return resource.NonRetryableError(err)
 		}
-	}
+		return resource.RetryableError(fmt.Errorf("%v (%v) still exists", service, id))
+	})
 }

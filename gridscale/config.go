@@ -26,6 +26,7 @@ func (c Config) Client() (*gsclient.Client, error) {
 		true,
 		0,
 		0,
+		0,
 	)
 	client := gsclient.NewClient(config)
 	log.Print("[INFO] gridscale client configured")

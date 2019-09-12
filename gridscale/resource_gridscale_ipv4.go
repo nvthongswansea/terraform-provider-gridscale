@@ -194,5 +194,5 @@ func resourceGridscaleIpDelete(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return err
 	}
-	return service_query.BlockDeletion(client, service_query.IPService, d.Id())
+	return service_query.RetryUntilDeleted(client, service_query.IPService, d.Id())
 }

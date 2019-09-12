@@ -166,5 +166,5 @@ func resourceGridscaleNetworkDelete(d *schema.ResourceData, meta interface{}) er
 	if err != nil {
 		return err
 	}
-	return service_query.BlockDeletion(client, service_query.NetworkService, d.Id())
+	return service_query.RetryUntilDeleted(client, service_query.NetworkService, d.Id())
 }
