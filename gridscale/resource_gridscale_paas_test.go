@@ -6,7 +6,6 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/nvthongswansea/gsclient-go"
-	"log"
 	"testing"
 )
 
@@ -22,17 +21,21 @@ func TestAccDataSourceGridscalePaaS_Basic(t *testing.T) {
 			{
 				Config: testAccCheckDataSourceGridscalePaaSConfig_basic(name),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDataSourceGridscalePaaSExists("gridscale_paas.foo", &object),
+					testAccCheckDataSourceGridscalePaaSExists("gridscale_paas.foopaas", &object),
 					resource.TestCheckResourceAttr(
-						"gridscale_paas.foo", "name", name),
+						"gridscale_paas.foopaas", "name", name),
+					resource.TestCheckResourceAttr(
+						"gridscale_paas.foopaas", "service_template_uuid", "f9625726-5ca8-4d5c-b9bd-3257e1e2211a"),
 				),
 			},
 			{
 				Config: testAccCheckDataSourceGridscalePaaSConfig_basic_update(),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDataSourceGridscalePaaSExists("gridscale_paas.foo", &object),
+					testAccCheckDataSourceGridscalePaaSExists("gridscale_paas.foopaas", &object),
 					resource.TestCheckResourceAttr(
-						"gridscale_paas.foo", "name", "newname"),
+						"gridscale_paas.foopaas", "name", "newname"),
+					resource.TestCheckResourceAttr(
+						"gridscale_paas.foopaas", "service_template_uuid", "f9625726-5ca8-4d5c-b9bd-3257e1e2211a"),
 				),
 			},
 		},
@@ -87,8 +90,8 @@ func testAccCheckDataSourceGridscalePaaSDestroyCheck(s *terraform.State) error {
 
 func testAccCheckDataSourceGridscalePaaSConfig_basic(name string) string {
 	return fmt.Sprintf(`
-resource "gridscale_paas" "foo" {
-  name   = "%s"
+resource "gridscale_paas" "foopaas" {
+  name = "%s"
   service_template_uuid = "f9625726-5ca8-4d5c-b9bd-3257e1e2211a"
 }
 `, name)
@@ -96,9 +99,13 @@ resource "gridscale_paas" "foo" {
 
 func testAccCheckDataSourceGridscalePaaSConfig_basic_update() string {
 	return fmt.Sprintf(`
-resource "gridscale_paas" "foo" {
-  name   = "newname"
+resource "gridscale_paas" "foopaas" {
+  name = "newname"
   service_template_uuid = "f9625726-5ca8-4d5c-b9bd-3257e1e2211a"
+  resource_limit {
+	resource = "cores"
+	limit = 16
+  }
 }
 `)
 }

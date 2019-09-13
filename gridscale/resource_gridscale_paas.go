@@ -2,6 +2,8 @@ package gridscale
 
 import (
 	"fmt"
+	//"fmt"
+	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/nvthongswansea/gsclient-go"
@@ -58,6 +60,7 @@ func resourceGridscalePaaS() *schema.Resource {
 				Description: "Security zone UUID linked to PaaS service",
 				Optional:    true,
 				ForceNew:    true,
+				Default:     "cabc11f7-7ef2-42a5-9e59-a3024f35fe57",
 			},
 			"service_template_uuid": {
 				Type:         schema.TypeString,
@@ -166,7 +169,6 @@ func resourceGridscalePaaSServiceRead(d *schema.ResourceData, meta interface{}) 
 	d.Set("change_time", props.ChangeTime)
 	d.Set("create_time", props.CreateTime)
 	d.Set("status", props.Status)
-	d.Set("status", props.Status)
 
 	//Get listen ports
 	listenPorts := make([]interface{}, 0)
@@ -271,7 +273,7 @@ func resourceGridscalePaaSServiceUpdate(d *schema.ResourceData, meta interface{}
 	client := meta.(*gsclient.Client)
 	requestBody := gsclient.PaaSServiceUpdateRequest{
 		Name:   d.Get("name").(string),
-		Labels: convSOStrings(d.Get("labels").(*schema.Set).List()),
+		Labels: convSOStrings(d.Get("labels").([]interface{})),
 	}
 
 	params := make(map[string]interface{}, 0)
@@ -320,7 +322,10 @@ func resourceGridscalePaaSServiceUpdate(d *schema.ResourceData, meta interface{}
 
 func resourceGridscalePaaSServiceDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*gsclient.Client)
-	err := client.DeletePaaSService(d.Id())
+	d.ConnInfo()
+	err := resource.Retry(d.Timeout(schema.TimeoutDelete), func() *resource.RetryError {
+		return resource.RetryableError(client.DeletePaaSService(d.Id()))
+	})
 	if err != nil {
 		return err
 	}
