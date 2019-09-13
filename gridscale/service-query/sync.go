@@ -9,7 +9,7 @@ import (
 
 const (
 	delayFetchingStatus  = 500 * time.Millisecond
-	timeoutCheckDeletion = 1 * time.Minute
+	timeoutCheckDeletion = 3 * time.Minute
 )
 
 const (
@@ -27,6 +27,7 @@ const (
 	SSHKeyService       gsService = "sshkey"
 	StorageService      gsService = "storage"
 	ISOImageService     gsService = "isoimage"
+	PaaSService         gsService = "paas"
 )
 
 //RetryUntilResourceStatusIsActive blocks until the object's state is not in provisioning anymore
@@ -94,6 +95,16 @@ func RetryUntilResourceStatusIsActive(client *gsclient.Client, service gsService
 				return resource.RetryableError(fmt.Errorf("Status of storage %s is not active", id))
 			}
 			return nil
+		case PaaSService:
+			paas, err := client.GetPaaSService(id)
+			if err != nil {
+				return resource.NonRetryableError(fmt.Errorf(
+					"Error waiting for PaaS service (%s) to be fetched: %s", id, err))
+			}
+			if paas.Properties.Status != activeStatus {
+				return resource.RetryableError(fmt.Errorf("Status of PaaS service %s is not active", id))
+			}
+			return nil
 		default:
 			return resource.NonRetryableError(fmt.Errorf("invalid service"))
 		}
@@ -117,6 +128,8 @@ func RetryUntilDeleted(client *gsclient.Client, service gsService, id string) er
 			_, err = client.GetSshkey(id)
 		case StorageService:
 			_, err = client.GetStorage(id)
+		case PaaSService:
+			_, err = client.GetPaaSService(id)
 		default:
 			return resource.NonRetryableError(fmt.Errorf("invalid service"))
 		}

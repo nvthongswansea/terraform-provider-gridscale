@@ -273,6 +273,8 @@ github.com/nvthongswansea/gsclient-go v0.0.0-20190911135953-eee9449b74a8 h1:GxfN
 github.com/nvthongswansea/gsclient-go v0.0.0-20190911135953-eee9449b74a8/go.mod h1:chVIogQ3ouMqIVsdIkfMC9mlcFncgbRPWWau0a3+sVw=
 github.com/nvthongswansea/gsclient-go v0.0.0-20190912102630-c2358a9e1757 h1:dVNEdO7F8DXP9eA8o1TrESoV55W4Jb9/WL/CDr/E/YA=
 github.com/nvthongswansea/gsclient-go v0.0.0-20190912102630-c2358a9e1757/go.mod h1:chVIogQ3ouMqIVsdIkfMC9mlcFncgbRPWWau0a3+sVw=
+github.com/nvthongswansea/gsclient-go v0.0.0-20190913123023-227634f236d5 h1:yH9Nin2RC9GbKDQNmeju79zG1YkwqmC+BrHAE1jUO6w=
+github.com/nvthongswansea/gsclient-go v0.0.0-20190913123023-227634f236d5/go.mod h1:chVIogQ3ouMqIVsdIkfMC9mlcFncgbRPWWau0a3+sVw=
 github.com/oklog/run v1.0.0 h1:Ru7dDtJNOyC66gQ5dQmaCa0qIsAUFY3sFpK1Xk8igrw=
 github.com/oklog/run v1.0.0/go.mod h1:dlhp/R75TPv97u0XWUtDeV/lRKWPKSdTuV0TZvrmrQA=
 github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
