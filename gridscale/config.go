@@ -23,7 +23,7 @@ func (c Config) Client() (*gsclient.Client, error) {
 		c.APIUrl,
 		c.UserUUID,
 		c.APIToken,
-		true,
+		false,
 		0,
 		0,
 		0,

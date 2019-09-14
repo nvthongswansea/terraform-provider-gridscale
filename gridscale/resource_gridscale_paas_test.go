@@ -35,7 +35,7 @@ func TestAccDataSourceGridscalePaaS_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"gridscale_paas.foopaas", "name", "newname"),
 					resource.TestCheckResourceAttr(
-						"gridscale_paas.foopaas", "service_template_uuid", "f9625726-5ca8-4d5c-b9bd-3257e1e2211a"),
+						"gridscale_paas.foopaas", "service_template_uuid", "136c1446-13e0-4734-bdb6-ab0a15c1d680"),
 				),
 			},
 		},
@@ -101,7 +101,7 @@ func testAccCheckDataSourceGridscalePaaSConfig_basic_update() string {
 	return fmt.Sprintf(`
 resource "gridscale_paas" "foopaas" {
   name = "newname"
-  service_template_uuid = "f9625726-5ca8-4d5c-b9bd-3257e1e2211a"
+  service_template_uuid = "136c1446-13e0-4734-bdb6-ab0a15c1d680"
   resource_limit {
 	resource = "cores"
 	limit = 16

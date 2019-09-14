@@ -60,7 +60,7 @@ func resourceGridscalePaaS() *schema.Resource {
 				Description: "Security zone UUID linked to PaaS service",
 				Optional:    true,
 				ForceNew:    true,
-				Default:     "cabc11f7-7ef2-42a5-9e59-a3024f35fe57",
+				Default:     "f21ffa59-ae8b-45b9-a7e0-536fa62f6f8b",
 			},
 			"service_template_uuid": {
 				Type:         schema.TypeString,
@@ -294,7 +294,7 @@ func resourceGridscalePaaSServiceUpdate(d *schema.ResourceData, meta interface{}
 	requestBody.Parameters = params
 
 	limits := make([]gsclient.ResourceLimit, 0)
-	for _, value := range d.Get("parameter").(*schema.Set).List() {
+	for _, value := range d.Get("resource_limit").(*schema.Set).List() {
 		mapVal := value.(map[string]interface{})
 		var resLim gsclient.ResourceLimit
 		for k, v := range mapVal {
