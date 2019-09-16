@@ -4,7 +4,7 @@ require (
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/gridscale/gsclient-go v1.0.0 // indirect
 	github.com/hashicorp/terraform v0.12.5
-	github.com/nvthongswansea/gsclient-go v0.0.0-20190913123023-227634f236d5
+	github.com/nvthongswansea/gsclient-go v0.0.0-20190916084519-2af770772302
 	gotest.tools v2.2.0+incompatible // indirect
 )
 

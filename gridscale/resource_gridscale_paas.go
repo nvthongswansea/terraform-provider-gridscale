@@ -245,7 +245,7 @@ func resourceGridscalePaaSServiceCreate(d *schema.ResourceData, meta interface{}
 	requestBody.Parameters = params
 
 	limits := make([]gsclient.ResourceLimit, 0)
-	for _, value := range d.Get("parameter").(*schema.Set).List() {
+	for _, value := range d.Get("resource_limit").(*schema.Set).List() {
 		mapVal := value.(map[string]interface{})
 		var resLim gsclient.ResourceLimit
 		for k, v := range mapVal {
