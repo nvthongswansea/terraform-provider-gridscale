@@ -28,6 +28,7 @@ const (
 	StorageService      gsService = "storage"
 	ISOImageService     gsService = "isoimage"
 	PaaSService         gsService = "paas"
+	SecurityZoneService gsService = "security"
 )
 
 //RetryUntilResourceStatusIsActive blocks until the object's state is not in provisioning anymore
@@ -105,6 +106,16 @@ func RetryUntilResourceStatusIsActive(client *gsclient.Client, service gsService
 				return resource.RetryableError(fmt.Errorf("Status of PaaS service %s is not active", id))
 			}
 			return nil
+		case SecurityZoneService:
+			securityZone, err := client.GetPaaSSecurityZone(id)
+			if err != nil {
+				return resource.NonRetryableError(fmt.Errorf(
+					"Error waiting for security zone (%s) to be fetched: %s", id, err))
+			}
+			if securityZone.Properties.Status != activeStatus {
+				return resource.RetryableError(fmt.Errorf("Status of security zone %s is not active", id))
+			}
+			return nil
 		default:
 			return resource.NonRetryableError(fmt.Errorf("invalid service"))
 		}
@@ -130,6 +141,8 @@ func RetryUntilDeleted(client *gsclient.Client, service gsService, id string) er
 			_, err = client.GetStorage(id)
 		case PaaSService:
 			_, err = client.GetPaaSService(id)
+		case SecurityZoneService:
+			_, err = client.GetPaaSSecurityZone(id)
 		default:
 			return resource.NonRetryableError(fmt.Errorf("invalid service"))
 		}

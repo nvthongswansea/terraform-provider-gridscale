@@ -46,6 +46,7 @@ func Provider() terraform.ResourceProvider {
 			"gridscale_sshkey":       resourceGridscaleSshkey(),
 			"gridscale_loadbalancer": resourceGridscaleLoadBalancer(),
 			"gridscale_paas":         resourceGridscalePaaS(),
+			"gridscale_securityzone": resourceGridscaleSecurityZone(),
 		},
 		ConfigureFunc: providerConfigure,
 	}

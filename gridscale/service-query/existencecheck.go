@@ -24,6 +24,8 @@ func IsObjectExist(client *gsclient.Client, service gsService, id string) (bool,
 		_, err = client.GetStorage(id)
 	case ISOImageService:
 		_, err = client.GetISOImage(id)
+	case SecurityZoneService:
+		_, err = client.GetPaaSSecurityZone(id)
 	default:
 		return isExist, fmt.Errorf("invalid service")
 	}
