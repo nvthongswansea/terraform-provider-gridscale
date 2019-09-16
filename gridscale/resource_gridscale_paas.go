@@ -2,7 +2,6 @@ package gridscale
 
 import (
 	"fmt"
-	//"fmt"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
@@ -60,7 +59,7 @@ func resourceGridscalePaaS() *schema.Resource {
 				Description: "Security zone UUID linked to PaaS service",
 				Optional:    true,
 				ForceNew:    true,
-				Default:     "f21ffa59-ae8b-45b9-a7e0-536fa62f6f8b",
+				Computed:    true,
 			},
 			"service_template_uuid": {
 				Type:         schema.TypeString,
