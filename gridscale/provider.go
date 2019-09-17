@@ -47,6 +47,7 @@ func Provider() terraform.ResourceProvider {
 			"gridscale_loadbalancer": resourceGridscaleLoadBalancer(),
 			"gridscale_paas":         resourceGridscalePaaS(),
 			"gridscale_securityzone": resourceGridscaleSecurityZone(),
+			"gridscale_snapshot":     resourceGridscaleStorageSnapshot(),
 		},
 		ConfigureFunc: providerConfigure,
 	}

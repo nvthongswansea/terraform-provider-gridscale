@@ -2,7 +2,6 @@ package gridscale
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/nvthongswansea/gsclient-go"
@@ -147,7 +146,7 @@ func resourceGridscaleSecurityZoneUpdate(d *schema.ResourceData, meta interface{
 	if err != nil {
 		return err
 	}
-	err = service_query.RetryUntilResourceStatusIsActive(client, service_query.SecurityZoneService, d.Id(), d.Timeout(schema.TimeoutUpdate))
+	err = service_query.RetryUntilResourceStatusIsActive(client, service_query.SecurityZoneService, d.Timeout(schema.TimeoutUpdate), d.Id())
 	if err != nil {
 		return err
 	}
@@ -156,12 +155,9 @@ func resourceGridscaleSecurityZoneUpdate(d *schema.ResourceData, meta interface{
 
 func resourceGridscaleSecurityZoneDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*gsclient.Client)
-	d.ConnInfo()
-	err := resource.Retry(d.Timeout(schema.TimeoutDelete), func() *resource.RetryError {
-		return resource.RetryableError(client.DeletePaaSSecurityZone(d.Id()))
-	})
+	err := client.DeletePaaSSecurityZone(d.Id())
 	if err != nil {
 		return err
 	}
-	return service_query.RetryUntilDeleted(client, service_query.SecurityZoneService, d.Id())
+	return service_query.RetryUntilDeleted(client, service_query.SecurityZoneService, d.Timeout(schema.TimeoutDelete), d.Id())
 }

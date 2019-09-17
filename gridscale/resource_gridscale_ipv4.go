@@ -6,7 +6,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 
 	"github.com/nvthongswansea/gsclient-go"
@@ -159,7 +158,7 @@ func resourceGridscaleIpUpdate(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = service_query.RetryUntilResourceStatusIsActive(client, service_query.IPService, d.Id(), d.Timeout(schema.TimeoutUpdate))
+	err = service_query.RetryUntilResourceStatusIsActive(client, service_query.IPService, d.Timeout(schema.TimeoutUpdate), d.Id())
 	if err != nil {
 		return err
 	}
@@ -188,11 +187,9 @@ func resourceGridscaleIpv4Create(d *schema.ResourceData, meta interface{}) error
 func resourceGridscaleIpDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*gsclient.Client)
 	d.ConnInfo()
-	err := resource.Retry(d.Timeout(schema.TimeoutDelete), func() *resource.RetryError {
-		return resource.RetryableError(client.DeleteIP(d.Id()))
-	})
+	err := client.DeleteIP(d.Id())
 	if err != nil {
 		return err
 	}
-	return service_query.RetryUntilDeleted(client, service_query.IPService, d.Id())
+	return service_query.RetryUntilDeleted(client, service_query.IPService, d.Timeout(schema.TimeoutDelete), d.Id())
 }

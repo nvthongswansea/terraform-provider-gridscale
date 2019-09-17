@@ -2,7 +2,6 @@ package gridscale
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/terraform-providers/terraform-provider-gridscale/gridscale/service-query"
 	"log"
 	"time"
@@ -95,7 +94,7 @@ func resourceGridscaleSshkeyUpdate(d *schema.ResourceData, meta interface{}) err
 	if err != nil {
 		return err
 	}
-	err = service_query.RetryUntilResourceStatusIsActive(client, service_query.SSHKeyService, d.Id(), d.Timeout(schema.TimeoutUpdate))
+	err = service_query.RetryUntilResourceStatusIsActive(client, service_query.SSHKeyService, d.Timeout(schema.TimeoutUpdate), d.Id())
 	if err != nil {
 		return err
 	}
@@ -120,11 +119,9 @@ func resourceGridscaleSshkeyCreate(d *schema.ResourceData, meta interface{}) err
 
 func resourceGridscaleSshkeyDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*gsclient.Client)
-	err := resource.Retry(d.Timeout(schema.TimeoutDelete), func() *resource.RetryError {
-		return resource.RetryableError(client.DeleteSshkey(d.Id()))
-	})
+	err := client.DeleteSshkey(d.Id())
 	if err != nil {
 		return err
 	}
-	return service_query.RetryUntilDeleted(client, service_query.SSHKeyService, d.Id())
+	return service_query.RetryUntilDeleted(client, service_query.SSHKeyService, d.Timeout(schema.TimeoutDelete), d.Id())
 }

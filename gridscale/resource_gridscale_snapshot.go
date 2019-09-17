@@ -2,11 +2,11 @@ package gridscale
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/nvthongswansea/gsclient-go"
 	service_query "github.com/terraform-providers/terraform-provider-gridscale/gridscale/service-query"
 	"log"
+	"time"
 )
 
 func resourceGridscaleStorageSnapshot() *schema.Resource {
@@ -94,6 +94,10 @@ the product_no of the license (see the /prices endpoint for more details)`,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
+		Timeouts: &schema.ResourceTimeout{
+			Delete: schema.DefaultTimeout(time.Minute * 3),
+			Update: schema.DefaultTimeout(time.Minute * 3),
+		},
 	}
 }
 
@@ -168,11 +172,9 @@ func resourceGridscaleSnapshotUpdate(d *schema.ResourceData, meta interface{}) e
 
 func resourceGridscaleSnapshotDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*gsclient.Client)
-	err := resource.Retry(d.Timeout(schema.TimeoutDelete), func() *resource.RetryError {
-		return resource.RetryableError(client.DeleteStorageSnapshot(d.Get("storage_uuid").(string), d.Id()))
-	})
+	err := client.DeleteStorageSnapshot(d.Get("storage_uuid").(string), d.Id())
 	if err != nil {
 		return err
 	}
-	return service_query.RetryUntilDeleted(client, service_query.SnapshotService, d.Get("storage_uuid").(string), d.Id())
+	return service_query.RetryUntilDeleted(client, service_query.SnapshotService, d.Timeout(schema.TimeoutDelete), d.Get("storage_uuid").(string), d.Id())
 }

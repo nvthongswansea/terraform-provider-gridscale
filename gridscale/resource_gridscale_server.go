@@ -2,7 +2,6 @@ package gridscale
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/nvthongswansea/gsclient-go"
@@ -409,13 +408,11 @@ func resourceGridscaleServerDelete(d *schema.ResourceData, meta interface{}) err
 	if err != nil {
 		return err
 	}
-	err = resource.Retry(d.Timeout(schema.TimeoutDelete), func() *resource.RetryError {
-		return resource.RetryableError(client.DeleteServer(d.Id()))
-	})
+	err = client.DeleteServer(d.Id())
 	if err != nil {
 		return err
 	}
-	return service_query.RetryUntilDeleted(client, service_query.ServerService, d.Id())
+	return service_query.RetryUntilDeleted(client, service_query.ServerService, d.Timeout(schema.TimeoutDelete), d.Id())
 }
 
 func resourceGridscaleServerUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -493,7 +490,7 @@ func resourceGridscaleServerUpdate(d *schema.ResourceData, meta interface{}) err
 	if err != nil {
 		return err
 	}
-	err = service_query.RetryUntilResourceStatusIsActive(gsc, service_query.ServerService, d.Id(), d.Timeout(schema.TimeoutUpdate))
+	err = service_query.RetryUntilResourceStatusIsActive(gsc, service_query.ServerService, d.Timeout(schema.TimeoutUpdate), d.Id())
 	if err != nil {
 		return err
 	}

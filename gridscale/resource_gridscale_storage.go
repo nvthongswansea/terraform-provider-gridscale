@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 
@@ -204,7 +203,7 @@ func resourceGridscaleStorageUpdate(d *schema.ResourceData, meta interface{}) er
 	if err != nil {
 		return err
 	}
-	err = service_query.RetryUntilResourceStatusIsActive(client, service_query.StorageService, d.Id(), d.Timeout(schema.TimeoutUpdate))
+	err = service_query.RetryUntilResourceStatusIsActive(client, service_query.StorageService, d.Timeout(schema.TimeoutUpdate), d.Id())
 	if err != nil {
 		return err
 	}
@@ -247,11 +246,9 @@ func resourceGridscaleStorageCreate(d *schema.ResourceData, meta interface{}) er
 
 func resourceGridscaleStorageDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*gsclient.Client)
-	err := resource.Retry(d.Timeout(schema.TimeoutDelete), func() *resource.RetryError {
-		return resource.RetryableError(client.DeleteStorage(d.Id()))
-	})
+	err := client.DeleteStorage(d.Id())
 	if err != nil {
 		return err
 	}
-	return service_query.RetryUntilDeleted(client, service_query.StorageService, d.Id())
+	return service_query.RetryUntilDeleted(client, service_query.StorageService, d.Timeout(schema.TimeoutDelete), d.Id())
 }
