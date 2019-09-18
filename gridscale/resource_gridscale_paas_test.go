@@ -2,10 +2,10 @@ package gridscale
 
 import (
 	"fmt"
+	"github.com/gridscale/gsclient-go"
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/nvthongswansea/gsclient-go"
 	"testing"
 )
 

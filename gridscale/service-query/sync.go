@@ -3,8 +3,8 @@ package service_query
 import (
 	"errors"
 	"fmt"
+	"github.com/gridscale/gsclient-go"
 	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/nvthongswansea/gsclient-go"
 	"time"
 )
 
@@ -21,16 +21,17 @@ const (
 type gsService string
 
 const (
-	LoadbalancerService gsService = "loadbalancer"
-	IPService           gsService = "IP"
-	NetworkService      gsService = "network"
-	ServerService       gsService = "server"
-	SSHKeyService       gsService = "sshkey"
-	StorageService      gsService = "storage"
-	ISOImageService     gsService = "isoimage"
-	PaaSService         gsService = "paas"
-	SecurityZoneService gsService = "security"
-	SnapshotService     gsService = "snapshot"
+	LoadbalancerService     gsService = "loadbalancer"
+	IPService               gsService = "IP"
+	NetworkService          gsService = "network"
+	ServerService           gsService = "server"
+	SSHKeyService           gsService = "sshkey"
+	StorageService          gsService = "storage"
+	ISOImageService         gsService = "isoimage"
+	PaaSService             gsService = "paas"
+	SecurityZoneService     gsService = "security"
+	SnapshotService         gsService = "snapshot"
+	SnapshotScheduleService gsService = "snapshotSchedule"
 )
 
 //RetryUntilResourceStatusIsActive blocks until the object's state is not in provisioning anymore
@@ -155,6 +156,19 @@ func RetryUntilResourceStatusIsActive(client *gsclient.Client, service gsService
 				return resource.RetryableError(fmt.Errorf("Status of snapshot %s is not active", ids[1]))
 			}
 			return nil
+		case SnapshotScheduleService:
+			if len(ids) != 2 {
+				return resource.NonRetryableError(errors.New("invalid number of ids"))
+			}
+			snapshot, err := client.GetStorageSnapshotSchedule(ids[0], ids[1])
+			if err != nil {
+				return resource.NonRetryableError(fmt.Errorf(
+					"Error waiting for snapshot (%s) to be fetched: %s", ids[1], err))
+			}
+			if snapshot.Properties.Status != activeStatus {
+				return resource.RetryableError(fmt.Errorf("Status of snapshot schedule %s is not active", ids[1]))
+			}
+			return nil
 		default:
 			return resource.NonRetryableError(fmt.Errorf("invalid service"))
 		}
@@ -211,6 +225,11 @@ func RetryUntilDeleted(client *gsclient.Client, service gsService, timeout time.
 				return resource.NonRetryableError(errors.New("invalid number of ids"))
 			}
 			_, err = client.GetStorageSnapshot(ids[0], ids[1])
+		case SnapshotScheduleService:
+			if len(ids) != 2 {
+				return resource.NonRetryableError(errors.New("invalid number of ids"))
+			}
+			_, err = client.GetStorageSnapshotSchedule(ids[0], ids[1])
 		default:
 			return resource.NonRetryableError(fmt.Errorf("invalid service"))
 		}

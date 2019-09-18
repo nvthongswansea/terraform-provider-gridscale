@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/schema"
 
-	"github.com/nvthongswansea/gsclient-go"
+	"github.com/gridscale/gsclient-go"
 )
 
 func resourceGridscaleNetwork() *schema.Resource {

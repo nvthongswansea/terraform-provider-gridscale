@@ -1,0 +1,199 @@
+package gridscale
+
+import (
+	"fmt"
+	"github.com/gridscale/gsclient-go"
+	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
+	service_query "github.com/terraform-providers/terraform-provider-gridscale/gridscale/service-query"
+	"log"
+	"strings"
+	"time"
+)
+
+func resourceGridscaleStorageSnapshotSchedule() *schema.Resource {
+	return &schema.Resource{
+		Create: resourceGridscaleSnapshotScheduleCreate,
+		Read:   resourceGridscaleSnapshotScheduleRead,
+		Delete: resourceGridscaleSnapshotScheduleDelete,
+		Update: resourceGridscaleSnapshotScheduleUpdate,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
+		Schema: map[string]*schema.Schema{
+			"name": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The human-readable name of the object",
+			},
+			"next_runtime": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The date and time that the snapshot schedule will be run",
+			},
+			"keep_snapshots": {
+				Type:         schema.TypeInt,
+				Required:     true,
+				ValidateFunc: validation.IntAtLeast(1),
+				Description:  "The amount of Snapshots to keep before overwriting the last created Snapshot",
+			},
+			"run_interval": {
+				Type:         schema.TypeInt,
+				Required:     true,
+				ValidateFunc: validation.IntAtLeast(60),
+				Description:  "The interval at which the schedule will run (in minutes)",
+			},
+			"storage_uuid": {
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "Uuid of the storage used to create snapshots",
+			},
+			"create_time": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Defines the date and time the object was initially created",
+			},
+			"change_time": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Defines the date and time of the last object change",
+			},
+			"status": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Status indicates the status of the object",
+			},
+			"labels": {
+				Type:        schema.TypeList,
+				Description: "List of labels.",
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"snapshot": {
+				Type:        schema.TypeSet,
+				Computed:    true,
+				Description: "Related snashots",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"name": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"object_uuid": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"create_time": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+					},
+				},
+			},
+		},
+		Timeouts: &schema.ResourceTimeout{
+			Delete: schema.DefaultTimeout(time.Minute * 3),
+			Create: schema.DefaultTimeout(time.Minute * 3),
+			Update: schema.DefaultTimeout(time.Minute * 3),
+		},
+	}
+}
+
+func resourceGridscaleSnapshotScheduleRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*gsclient.Client)
+	scheduler, err := client.GetStorageSnapshotSchedule(d.Get("storage_uuid").(string), d.Id())
+	if err != nil {
+		if requestError, ok := err.(gsclient.RequestError); ok {
+			if requestError.StatusCode == 404 {
+				d.SetId("")
+				return nil
+			}
+		}
+		return err
+	}
+	props := scheduler.Properties
+	d.Set("status", props.Status)
+	d.Set("create_time", props.CreateTime)
+	d.Set("change_time", props.ChangeTime)
+
+	//Get snapshots
+	snapshots := make([]interface{}, 0)
+	for _, value := range props.Relations.Snapshots {
+		snapshots = append(snapshots, map[string]interface{}{
+			"name":        value.Name,
+			"object_uuid": value.ObjectUUID,
+			"create_time": value.CreateTime,
+		})
+	}
+	if err = d.Set("snapshot", snapshots); err != nil {
+		return fmt.Errorf("Error setting snapshots: %v", err)
+	}
+
+	//Set labels
+	if err = d.Set("labels", props.Labels); err != nil {
+		return fmt.Errorf("Error setting labels: %v", err)
+	}
+	return nil
+}
+
+func resourceGridscaleSnapshotScheduleCreate(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*gsclient.Client)
+	requestBody := gsclient.StorageSnapshotScheduleCreateRequest{
+		Name:          d.Get("name").(string),
+		Labels:        convSOStrings(d.Get("labels").([]interface{})),
+		RunInterval:   d.Get("run_interval").(int),
+		KeepSnapshots: d.Get("keep_snapshots").(int),
+	}
+	if strings.TrimSpace(d.Get("next_runtime").(string)) != "" {
+		nextRuntime, err := time.Parse(timeLayout, d.Get("next_runtime").(string))
+		if err != nil {
+			return err
+		}
+		requestBody.NextRuntime = &gsclient.JSONTime{nextRuntime}
+	}
+	response, err := client.CreateStorageSnapshotSchedule(d.Get("storage_uuid").(string), requestBody)
+	if err != nil {
+		return err
+	}
+	d.SetId(response.ObjectUUID)
+	log.Printf("The id for snapshot schedule %s has been set to %v", requestBody.Name, response.ObjectUUID)
+	return resourceGridscaleSnapshotScheduleRead(d, meta)
+}
+
+func resourceGridscaleSnapshotScheduleUpdate(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*gsclient.Client)
+	requestBody := gsclient.StorageSnapshotScheduleUpdateRequest{
+		Name:          d.Get("name").(string),
+		Labels:        convSOStrings(d.Get("labels").([]interface{})),
+		RunInterval:   d.Get("run_interval").(int),
+		KeepSnapshots: d.Get("keep_snapshots").(int),
+	}
+	if strings.TrimSpace(d.Get("next_runtime").(string)) != "" {
+		nextRuntime, err := time.Parse(timeLayout, d.Get("next_runtime").(string))
+		if err != nil {
+			return err
+		}
+		requestBody.NextRuntime = &gsclient.JSONTime{nextRuntime}
+	}
+	err := client.UpdateStorageSnapshotSchedule(d.Get("storage_uuid").(string), d.Id(), requestBody)
+	if err != nil {
+		return err
+	}
+	err = service_query.RetryUntilResourceStatusIsActive(client,
+		service_query.SnapshotScheduleService,
+		d.Timeout(schema.TimeoutUpdate),
+		d.Get("storage_uuid").(string),
+		d.Id(),
+	)
+	return resourceGridscaleSnapshotScheduleRead(d, meta)
+}
+
+func resourceGridscaleSnapshotScheduleDelete(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*gsclient.Client)
+	err := client.DeleteStorageSnapshotSchedule(d.Get("storage_uuid").(string), d.Id())
+	if err != nil {
+		return err
+	}
+	return service_query.RetryUntilDeleted(client, service_query.SnapshotScheduleService, d.Timeout(schema.TimeoutDelete), d.Get("storage_uuid").(string), d.Id())
+}

@@ -1,7 +1,6 @@
 package gsclient
 
 import (
-	"errors"
 	"net/http"
 	"path"
 )
@@ -42,11 +41,31 @@ type SshkeyUpdateRequest struct {
 	Labels []string `json:"labels,omitempty"`
 }
 
+//SshkeyEventList JSON struct of a list of a SSH-key's events
+type SshkeyEventList struct {
+	List []SshkeyEventProperties `json:"events"`
+}
+
+//SshkeyEvent JSON struct of an event of a SSH-key
+type SshkeyEvent struct {
+	Properties SshkeyEventProperties `json:"event"`
+}
+
+//SshkeyEventProperties JSON struct of properties of an event of a SSH-key
+type SshkeyEventProperties struct {
+	ObjectType    string `json:"object_type"`
+	RequestUUID   string `json:"request_uuid"`
+	ObjectUUID    string `json:"object_uuid"`
+	Activity      string `json:"activity"`
+	RequestType   string `json:"request_type"`
+	RequestStatus string `json:"request_status"`
+	Change        string `json:"change"`
+	Timestamp     string `json:"timestamp"`
+	UserUUID      string `json:"user_uuid"`
+}
+
 //GetSshkey gets a ssh key
 func (c *Client) GetSshkey(id string) (Sshkey, error) {
-	if !isValidUUID(id) {
-		return Sshkey{}, errors.New("'id' is invalid")
-	}
 	r := Request{
 		uri:    path.Join(apiSshkeyBase, id),
 		method: http.MethodGet,
@@ -90,9 +109,6 @@ func (c *Client) CreateSshkey(body SshkeyCreateRequest) (CreateResponse, error) 
 
 //DeleteSshkey deletes a ssh key
 func (c *Client) DeleteSshkey(id string) error {
-	if !isValidUUID(id) {
-		return errors.New("'id' is invalid")
-	}
 	r := Request{
 		uri:    path.Join(apiSshkeyBase, id),
 		method: http.MethodDelete,
@@ -102,9 +118,6 @@ func (c *Client) DeleteSshkey(id string) error {
 
 //UpdateSshkey updates a ssh key
 func (c *Client) UpdateSshkey(id string, body SshkeyUpdateRequest) error {
-	if !isValidUUID(id) {
-		return errors.New("'id' is invalid")
-	}
 	r := Request{
 		uri:    path.Join(apiSshkeyBase, id),
 		method: http.MethodPatch,
@@ -114,19 +127,16 @@ func (c *Client) UpdateSshkey(id string, body SshkeyUpdateRequest) error {
 }
 
 //GetSshkeyEventList gets a ssh key's events
-func (c *Client) GetSshkeyEventList(id string) ([]Event, error) {
-	if !isValidUUID(id) {
-		return nil, errors.New("'id' is invalid")
-	}
+func (c *Client) GetSshkeyEventList(id string) ([]SshkeyEvent, error) {
 	r := Request{
 		uri:    path.Join(apiSshkeyBase, id, "events"),
 		method: http.MethodGet,
 	}
-	var response EventList
-	var sshEvents []Event
+	var response SshkeyEventList
+	var sshEvents []SshkeyEvent
 	err := r.execute(*c, &response)
 	for _, properties := range response.List {
-		sshEvents = append(sshEvents, Event{Properties: properties})
+		sshEvents = append(sshEvents, SshkeyEvent{Properties: properties})
 	}
 	return sshEvents, err
 }

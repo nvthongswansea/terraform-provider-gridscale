@@ -209,32 +209,7 @@ Not all endpoints have been implemented in this client, but new ones will be add
     * Firewall Update (UpdateFirewall)
     * Firewall Delete (DeleteFirewall)
     * Firewall Events Get (GetFirewallEventList) 
-* Event
-    * Events Get (GetEventList)
-* Label
-    * Labels Get (GetLabelList)
-    * Label Create (CreateLabel)
-    * Label Delete (DeleteLabel)
-* Location
-    * Locations Get (GetLocationList)
-    * Location Get (GetLocation)
-    * Location IPs Get (GetIPsByLocation)
-    * Location ISO Images Get (GetISOImagesByLocation)
-    * Location Networks Get (GetNetworksByLocation)
-    * Location Servers Get (GetServersByLocation)
-    * Location Snapshots Get (GetSnapshotsByLocation)
-    * Location Storages Get (GetStoragesByLocation)
-    * Location Templates Get (GetTemplatesByLocation)
-* Deleted
-    * Deleted IPs Get (GetDeletedIPs)
-    * Deleted ISO Images Get (GetDeletedISOImages)
-    * Deleted Networks Get (GetDeletedNetworks)
-    * Deleted Servers Get (GetDeletedServers)
-    * Deleted Snapshots Get (GetDeletedSnapshots)
-    * Deleted Storages Get (GetDeletedStorages)
-    * Deleted Templates Get (GetDeletedTemplates)
-    * Deleted PaaS Services Get (GetDeletedPaaSServices)
-
+    
 Note: The functions in this list can be called with a Client type.
 
 ## Known Issues

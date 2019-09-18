@@ -1,36 +1,23 @@
 package gsclient
 
 import (
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"
-	"runtime"
-	"time"
-)
 
-const (
-	defaultCheckRequestTimeoutSecs = 120
-	defaultMaxNumberOfRetries      = 100
-	defaultDelayIntervalMilliSecs  = 500
-	version                        = "1.0.0"
+	"github.com/sirupsen/logrus"
 )
 
 //Config config for client
 type Config struct {
-	apiURL                  string
-	userUUID                string
-	apiToken                string
-	userAgent               string
-	httpClient              *http.Client
-	requestCheckTimeoutSecs time.Duration
-	delayInterval           time.Duration
-	maxNumberOfRetries      int
-	logger                  logrus.Logger
+	APIUrl     string
+	UserUUID   string
+	APIToken   string
+	HTTPClient *http.Client
+	logger     logrus.Logger
 }
 
 //NewConfiguration creates a new config
-func NewConfiguration(apiURL string, uuid string, token string, debugMode bool, requestCheckTimeoutSecs,
-	delayIntervalMilliSecs, maxNumberOfRetries int) *Config {
+func NewConfiguration(apiURL string, uuid string, token string, debugMode bool) *Config {
 	logLevel := logrus.InfoLevel
 	if debugMode {
 		logLevel = logrus.DebugLevel
@@ -45,25 +32,12 @@ func NewConfiguration(apiURL string, uuid string, token string, debugMode bool, 
 		},
 	}
 
-	if requestCheckTimeoutSecs == 0 {
-		requestCheckTimeoutSecs = defaultCheckRequestTimeoutSecs
-	}
-	if delayIntervalMilliSecs == 0 {
-		delayIntervalMilliSecs = defaultDelayIntervalMilliSecs
-	}
-	if maxNumberOfRetries == 0 {
-		maxNumberOfRetries = defaultMaxNumberOfRetries
-	}
 	cfg := &Config{
-		apiURL:                  apiURL,
-		userUUID:                uuid,
-		apiToken:                token,
-		userAgent:               "gsclient-go/" + version + " (" + runtime.GOOS + ")",
-		httpClient:              http.DefaultClient,
-		logger:                  logger,
-		requestCheckTimeoutSecs: time.Duration(requestCheckTimeoutSecs) * time.Second,
-		delayInterval:           time.Duration(delayIntervalMilliSecs) * time.Millisecond,
-		maxNumberOfRetries:      maxNumberOfRetries,
+		APIUrl:     apiURL,
+		UserUUID:   uuid,
+		APIToken:   token,
+		HTTPClient: http.DefaultClient,
+		logger:     logger,
 	}
 	return cfg
 }

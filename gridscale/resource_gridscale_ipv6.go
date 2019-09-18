@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/schema"
 
-	"github.com/nvthongswansea/gsclient-go"
+	"github.com/gridscale/gsclient-go"
 )
 
 func resourceGridscaleIpv6() *schema.Resource {
@@ -112,7 +112,7 @@ func resourceGridscaleIpv6() *schema.Resource {
 func resourceGridscaleIpv6Create(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*gsclient.Client)
 	requestBody := gsclient.IPCreateRequest{
-		Family:       6,
+		Family:       gsclient.IPv6Type,
 		LocationUUID: d.Get("location_uuid").(string),
 		Failover:     d.Get("failover").(bool),
 		ReverseDNS:   d.Get("reverse_dns").(string),

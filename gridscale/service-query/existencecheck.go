@@ -2,7 +2,7 @@ package service_query
 
 import (
 	"fmt"
-	"github.com/nvthongswansea/gsclient-go"
+	"github.com/gridscale/gsclient-go"
 )
 
 //IsObjectExist checks if object exists

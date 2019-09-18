@@ -2,9 +2,9 @@ package gridscale
 
 import (
 	"fmt"
+	"github.com/gridscale/gsclient-go"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
-	"github.com/nvthongswansea/gsclient-go"
 	service_query "github.com/terraform-providers/terraform-provider-gridscale/gridscale/service-query"
 	"log"
 	"time"

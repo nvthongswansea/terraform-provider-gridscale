@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 
-	"github.com/nvthongswansea/gsclient-go"
+	"github.com/gridscale/gsclient-go"
 )
 
 func resourceGridscaleStorage() *schema.Resource {
@@ -216,8 +216,15 @@ func resourceGridscaleStorageCreate(d *schema.ResourceData, meta interface{}) er
 		Name:         d.Get("name").(string),
 		Capacity:     d.Get("capacity").(int),
 		LocationUUID: d.Get("location_uuid").(string),
-		StorageType:  d.Get("storage_type").(string),
 		Labels:       convSOStrings(d.Get("labels").(*schema.Set).List()),
+	}
+	switch d.Get("storage_type").(string) {
+	case "storage_high":
+		requestBody.StorageType = gsclient.HighStorageType
+	case "storage_insane":
+		requestBody.StorageType = gsclient.InsaneStorageType
+	default:
+		requestBody.StorageType = gsclient.DefaultStorageType
 	}
 	//since only one template can be used, we can just look at index 0
 	if _, ok := d.GetOk("template"); ok {

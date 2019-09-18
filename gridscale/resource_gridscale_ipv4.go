@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/schema"
 
-	"github.com/nvthongswansea/gsclient-go"
+	"github.com/gridscale/gsclient-go"
 )
 
 func resourceGridscaleIpv4() *schema.Resource {
@@ -168,7 +168,7 @@ func resourceGridscaleIpUpdate(d *schema.ResourceData, meta interface{}) error {
 func resourceGridscaleIpv4Create(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*gsclient.Client)
 	requestBody := gsclient.IPCreateRequest{
-		Family:       4,
+		Family:       gsclient.IPv4Type,
 		LocationUUID: d.Get("location_uuid").(string),
 		Name:         d.Get("name").(string),
 		Failover:     d.Get("failover").(bool),

@@ -1,7 +1,6 @@
 package gsclient
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"path"
@@ -10,11 +9,6 @@ import (
 //TemplateList JSON struct of a list of templates
 type TemplateList struct {
 	List map[string]TemplateProperties `json:"templates"`
-}
-
-//DeletedTemplateList JSON struct of a list of deleted templates
-type DeletedTemplateList struct {
-	List map[string]TemplateProperties `json:"deleted_templates"`
 }
 
 //Template JSON struct of a single template
@@ -45,6 +39,29 @@ type TemplateProperties struct {
 	Labels           []string `json:"labels"`
 }
 
+//TemplateEventList JSON struct of a list of a template's events
+type TemplateEventList struct {
+	List []TemplateEventProperties `json:"events"`
+}
+
+//TemplateEvent JSON struct of an event of a template
+type TemplateEvent struct {
+	Properties TemplateEventProperties `json:"event"`
+}
+
+//TemplateEventProperties JSON struct of properties of an event of a template
+type TemplateEventProperties struct {
+	ObjectType    string `json:"object_type"`
+	RequestUUID   string `json:"request_uuid"`
+	ObjectUUID    string `json:"object_uuid"`
+	Activity      string `json:"activity"`
+	RequestType   string `json:"request_type"`
+	RequestStatus string `json:"request_status"`
+	Change        string `json:"change"`
+	Timestamp     string `json:"timestamp"`
+	UserUUID      string `json:"user_uuid"`
+}
+
 //TemplateCreateRequest JSON struct of a request for creating a template
 type TemplateCreateRequest struct {
 	Name         string   `json:"name"`
@@ -60,9 +77,6 @@ type TemplateUpdateRequest struct {
 
 //GetTemplate gets a template
 func (c *Client) GetTemplate(id string) (Template, error) {
-	if !isValidUUID(id) {
-		return Template{}, errors.New("'id' is invalid")
-	}
 	r := Request{
 		uri:    path.Join(apiTemplateBase, id),
 		method: http.MethodGet,
@@ -91,9 +105,6 @@ func (c *Client) GetTemplateList() ([]Template, error) {
 
 //GetTemplateByName gets a template by its name
 func (c *Client) GetTemplateByName(name string) (Template, error) {
-	if name == "" {
-		return Template{}, errors.New("'name' is required")
-	}
 	templates, err := c.GetTemplateList()
 	if err != nil {
 		return Template{}, err
@@ -120,9 +131,6 @@ func (c *Client) CreateTemplate(body TemplateCreateRequest) (CreateResponse, err
 
 //UpdateTemplate updates a template
 func (c *Client) UpdateTemplate(id string, body TemplateUpdateRequest) error {
-	if !isValidUUID(id) {
-		return errors.New("'id' is invalid")
-	}
 	r := Request{
 		uri:    path.Join(apiTemplateBase, id),
 		method: http.MethodPatch,
@@ -133,9 +141,6 @@ func (c *Client) UpdateTemplate(id string, body TemplateUpdateRequest) error {
 
 //DeleteTemplate deletes a template
 func (c *Client) DeleteTemplate(id string) error {
-	if !isValidUUID(id) {
-		return errors.New("'id' is invalid")
-	}
 	r := Request{
 		uri:    path.Join(apiTemplateBase, id),
 		method: http.MethodDelete,
@@ -144,52 +149,16 @@ func (c *Client) DeleteTemplate(id string) error {
 }
 
 //GetTemplateEventList gets a list of a template's events
-func (c *Client) GetTemplateEventList(id string) ([]Event, error) {
-	if !isValidUUID(id) {
-		return nil, errors.New("'id' is invalid")
-	}
+func (c *Client) GetTemplateEventList(id string) ([]TemplateEvent, error) {
 	r := Request{
 		uri:    path.Join(apiTemplateBase, id, "events"),
 		method: http.MethodGet,
 	}
-	var response EventList
-	var templateEvents []Event
+	var response TemplateEventList
+	var templateEvents []TemplateEvent
 	err := r.execute(*c, &response)
 	for _, properties := range response.List {
-		templateEvents = append(templateEvents, Event{Properties: properties})
+		templateEvents = append(templateEvents, TemplateEvent{Properties: properties})
 	}
 	return templateEvents, err
-}
-
-//GetTemplatesByLocation gets a list of templates by location
-func (c *Client) GetTemplatesByLocation(id string) ([]Template, error) {
-	if !isValidUUID(id) {
-		return nil, errors.New("'id' is invalid")
-	}
-	r := Request{
-		uri:    path.Join(apiLocationBase, id, "templates"),
-		method: http.MethodGet,
-	}
-	var response TemplateList
-	var templates []Template
-	err := r.execute(*c, &response)
-	for _, properties := range response.List {
-		templates = append(templates, Template{Properties: properties})
-	}
-	return templates, err
-}
-
-//GetDeletedTemplates gets a list of deleted templates
-func (c *Client) GetDeletedTemplates() ([]Template, error) {
-	r := Request{
-		uri:    path.Join(apiDeletedBase, "templates"),
-		method: http.MethodGet,
-	}
-	var response DeletedTemplateList
-	var templates []Template
-	err := r.execute(*c, &response)
-	for _, properties := range response.List {
-		templates = append(templates, Template{Properties: properties})
-	}
-	return templates, err
 }

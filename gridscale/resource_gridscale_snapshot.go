@@ -2,8 +2,8 @@ package gridscale
 
 import (
 	"fmt"
+	"github.com/gridscale/gsclient-go"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/nvthongswansea/gsclient-go"
 	service_query "github.com/terraform-providers/terraform-provider-gridscale/gridscale/service-query"
 	"log"
 	"time"
@@ -125,7 +125,6 @@ func resourceGridscaleSnapshotRead(d *schema.ResourceData, meta interface{}) err
 	d.Set("license_product_no", props.LicenseProductNo)
 	d.Set("current_price", props.CurrentPrice)
 	d.Set("capacity", props.Capacity)
-	d.Set("labels", props.CurrentPrice)
 	//Set labels
 	if err = d.Set("labels", props.Labels); err != nil {
 		return fmt.Errorf("Error setting labels: %v", err)

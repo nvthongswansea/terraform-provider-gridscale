@@ -2,9 +2,9 @@ package gridscale
 
 import (
 	"fmt"
+	"github.com/gridscale/gsclient-go"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
-	"github.com/nvthongswansea/gsclient-go"
 	resource_dependency_crud "github.com/terraform-providers/terraform-provider-gridscale/gridscale/resource-dependency-crud"
 	"github.com/terraform-providers/terraform-provider-gridscale/gridscale/service-query"
 	"log"
@@ -275,7 +275,7 @@ func resourceGridscaleServerRead(d *schema.ResourceData, meta interface{}) error
 	d.Set("location_uuid", server.Properties.LocationUUID)
 	d.Set("power", server.Properties.Power)
 	d.Set("current_price", server.Properties.CurrentPrice)
-	d.Set("availability_zone", server.Properties.AvailablityZone)
+	d.Set("availability_zone", server.Properties.AvailabilityZone)
 	d.Set("auto_recovery", server.Properties.AutoRecovery)
 	d.Set("console_token", server.Properties.ConsoleToken)
 	d.Set("legacy", server.Properties.Legacy)
@@ -356,9 +356,27 @@ func resourceGridscaleServerCreate(d *schema.ResourceData, meta interface{}) err
 		Cores:           d.Get("cores").(int),
 		Memory:          d.Get("memory").(int),
 		LocationUUID:    d.Get("location_uuid").(string),
-		HardwareProfile: d.Get("hardware_profile").(string),
 		AvailablityZone: d.Get("availability_zone").(string),
 		Labels:          convSOStrings(d.Get("labels").(*schema.Set).List()),
+	}
+	switch d.Get("hardware_profile").(string) {
+
+	case "legacy":
+		requestBody.HardwareProfile = gsclient.LegacyServerHardware
+	case "nested":
+		requestBody.HardwareProfile = gsclient.NestedServerHardware
+	case "cisco_csr":
+		requestBody.HardwareProfile = gsclient.CiscoCSRServerHardware
+	case "sophos_utm":
+		requestBody.HardwareProfile = gsclient.SophosUTMServerHardware
+	case "f5_bigip":
+		requestBody.HardwareProfile = gsclient.F5BigipServerHardware
+	case "q35":
+		requestBody.HardwareProfile = gsclient.Q35ServerHardware
+	case "q35_nested":
+		requestBody.HardwareProfile = gsclient.Q35NestedServerHardware
+	default:
+		requestBody.HardwareProfile = gsclient.DefaultServerHardware
 	}
 	response, err := gsc.CreateServer(requestBody)
 	if err != nil {
