@@ -137,19 +137,19 @@ func resourceGridscaleServer() *schema.Resource {
 							Type:     schema.TypeString,
 							Required: true,
 						},
-						//"bootdevice": {
-						//	Type:     schema.TypeBool,
-						//	Optional: true,
-						//	Default:  false,
-						//},
-						//"object_name": {
-						//	Type:     schema.TypeString,
-						//	Computed: true,
-						//},
-						//"mac": {
-						//	Type:     schema.TypeString,
-						//	Computed: true,
-						//},
+						"bootdevice": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
+						},
+						"object_name": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"mac": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 						"rules_v4_in": {
 							Type:     schema.TypeList,
 							Optional: true,
@@ -157,47 +157,47 @@ func resourceGridscaleServer() *schema.Resource {
 								Schema: getFirewallRuleCommonSchema(),
 							},
 						},
-						//"rules_v4_out": {
-						//	Type:     schema.TypeList,
-						//	Optional: true,
-						//	Elem: &schema.Resource{
-						//		Schema: getFirewallRuleCommonSchema(),
-						//	},
-						//},
-						//"rules_v6_in": {
-						//	Type:     schema.TypeList,
-						//	Optional: true,
-						//	Elem: &schema.Resource{
-						//		Schema: getFirewallRuleCommonSchema(),
-						//	},
-						//},
-						//"rules_v6_out": {
-						//	Type:     schema.TypeList,
-						//	Optional: true,
-						//	Elem: &schema.Resource{
-						//		Schema: getFirewallRuleCommonSchema(),
-						//	},
-						//},
-						//"firewall_template_uuid": {
-						//	Type:     schema.TypeString,
-						//	Optional: true,
-						//},
-						//"partner_uuid": {
-						//	Type:     schema.TypeString,
-						//	Computed: true,
-						//},
-						//"ordering": {
-						//	Type:     schema.TypeInt,
-						//	Computed: true,
-						//},
-						//"create_time": {
-						//	Type:     schema.TypeString,
-						//	Computed: true,
-						//},
-						//"network_type": {
-						//	Type:     schema.TypeString,
-						//	Computed: true,
-						//},
+						"rules_v4_out": {
+							Type:     schema.TypeList,
+							Optional: true,
+							Elem: &schema.Resource{
+								Schema: getFirewallRuleCommonSchema(),
+							},
+						},
+						"rules_v6_in": {
+							Type:     schema.TypeList,
+							Optional: true,
+							Elem: &schema.Resource{
+								Schema: getFirewallRuleCommonSchema(),
+							},
+						},
+						"rules_v6_out": {
+							Type:     schema.TypeList,
+							Optional: true,
+							Elem: &schema.Resource{
+								Schema: getFirewallRuleCommonSchema(),
+							},
+						},
+						"firewall_template_uuid": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"partner_uuid": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"ordering": {
+							Type:     schema.TypeInt,
+							Computed: true,
+						},
+						"create_time": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"network_type": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 					},
 				},
 			},
@@ -443,11 +443,10 @@ func readServerNetworkRels(storages []gsclient.ServerNetworkRelationProperties) 
 	for _, value := range storages {
 		if !value.PublicNet {
 			network := map[string]interface{}{
-				"object_uuid": value.ObjectUUID,
-				"bootdevice":  value.BootDevice,
-				"create_time": value.CreateTime.String(),
-				"mac":         value.Mac,
-				//"firewall":               value.Firewall,
+				"object_uuid":            value.ObjectUUID,
+				"bootdevice":             value.BootDevice,
+				"create_time":            value.CreateTime.String(),
+				"mac":                    value.Mac,
 				"firewall_template_uuid": value.FirewallTemplateUUID,
 				"object_name":            value.ObjectName,
 				"network_type":           value.NetworkType,
@@ -461,18 +460,26 @@ func readServerNetworkRels(storages []gsclient.ServerNetworkRelationProperties) 
 				v4InRuleProp := flattenFirewallRuleProperties(props)
 				v4InRuleProps = append(v4InRuleProps, v4InRuleProp)
 			}
+			network["rules_v4_in"] = v4InRuleProps
+
 			for _, props := range value.Firewall.RulesV4Out {
 				v4OutRuleProp := flattenFirewallRuleProperties(props)
 				v4OutRuleProps = append(v4OutRuleProps, v4OutRuleProp)
 			}
+			network["rules_v4_out"] = v4OutRuleProps
+
 			for _, props := range value.Firewall.RulesV6In {
 				v6InRuleProp := flattenFirewallRuleProperties(props)
 				v6InRuleProps = append(v6InRuleProps, v6InRuleProp)
 			}
+			network["rules_v6_in"] = v6InRuleProps
+
 			for _, props := range value.Firewall.RulesV6Out {
 				v6OutRuleProp := flattenFirewallRuleProperties(props)
 				v6OutRuleProps = append(v6OutRuleProps, v6OutRuleProp)
 			}
+			network["rules_v6_out"] = v6OutRuleProps
+
 			networks = append(networks, network)
 		}
 	}

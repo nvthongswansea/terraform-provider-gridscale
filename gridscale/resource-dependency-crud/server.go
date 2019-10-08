@@ -3,9 +3,8 @@ package resource_dependency_crud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/gridscale/gsclient-go"
-	"log"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 //ServerDependencyClient is an wrapper of gsclient which is used for
@@ -54,18 +53,6 @@ func (c *ServerDependencyClient) LinkStorages(ctx context.Context) error {
 			}
 		}
 	}
-	////Attach additional storages
-	//if attr, ok := d.GetOk("storage"); ok {
-	//	for _, value := range attr.(*schema.Set).List() {
-	//		storage := value.(map[string]interface{})
-	//		if !storage["bootdevice"].(bool) {
-	//			err := client.LinkStorage(ctx, d.Id(), storage["object_uuid"].(string), storage["bootdevice"].(bool))
-	//			if err != nil {
-	//				return err
-	//			}
-	//		}
-	//	}
-	//}
 	return nil
 }
 
@@ -164,7 +151,6 @@ func (c *ServerDependencyClient) LinkNetworks(ctx context.Context, isPublic bool
 			var fwRules gsclient.FirewallRules
 			var rulesv4 []gsclient.FirewallRuleProperties
 			if attr1, ok1 := d.GetOk(fmt.Sprintf("%s.%d.rules_v4_in", "network", i)); ok1 {
-				log.Printf("------------------------11111111")
 				for _, value1 := range attr1.([]interface{}) {
 					rule := value1.(map[string]interface{})
 					rulesv4 = append(rulesv4, gsclient.FirewallRuleProperties{
@@ -179,7 +165,6 @@ func (c *ServerDependencyClient) LinkNetworks(ctx context.Context, isPublic bool
 					})
 				}
 			}
-			log.Printf("------------------------222222222")
 			fwRules.RulesV4In = rulesv4
 			err := client.LinkNetwork(
 				ctx,
@@ -199,7 +184,6 @@ func (c *ServerDependencyClient) LinkNetworks(ctx context.Context, isPublic bool
 					err,
 				)
 			}
-			log.Printf("------------------------33333333")
 		}
 	}
 	return nil
