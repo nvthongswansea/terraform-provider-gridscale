@@ -132,7 +132,7 @@ resource "gridscale_server" "foo" {
 				dst_port = "20:80"
 				comment = "test1"
 		}
-		rules_v4_in	{
+		rules_v6_in	{
 				order = 1
 				action = "drop"
 				dst_port = "100:500"
@@ -167,7 +167,7 @@ resource "gridscale_server" "foo" {
 				dst_port = "20:80"
 				comment = "test1"
 		}
-		rules_v4_in	{
+		rules_v6_in	{
 				order = 1
 				action = "drop"
 				dst_port = "100:500"
