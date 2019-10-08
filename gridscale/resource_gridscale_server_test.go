@@ -110,22 +110,70 @@ func testAccCheckDataSourceGridscaleServerDestroyCheck(s *terraform.State) error
 
 func testAccCheckDataSourceGridscaleServerConfig_basic(name string) string {
 	return fmt.Sprintf(`
+resource "gridscale_ipv4" "foo" {
+  name   = "ip-%s"
+}
+
+resource "gridscale_network" "foo" {
+  name   = "net-%s"
+}
+
 resource "gridscale_server" "foo" {
   name   = "%s"
   cores = 2
   memory = 2
   power = true
+  ipv4 = "${gridscale_ipv4.foo.id}"
+  network {
+		object_uuid = "${gridscale_network.foo.id}"
+		rules_v4_in {
+				order = 0
+				action = "drop"
+				dst_port = "20:80"
+				comment = "test1"
+		}
+		rules_v4_in	{
+				order = 1
+				action = "drop"
+				dst_port = "100:500"
+				comment = "test2"
+		}
+  	}
 }
-`, name)
+`, name, name, name)
 }
 
 func testAccCheckDataSourceGridscaleServerConfig_basic_update() string {
 	return fmt.Sprintf(`
+resource "gridscale_ipv4" "foo" {
+  name   = "newname"
+}
+
+resource "gridscale_network" "foo" {
+  name   = "newname"
+}
+
 resource "gridscale_server" "foo" {
   name   = "newname"
   cores = 1
   memory = 1
   power = true
+  ipv4 = "${gridscale_ipv4.foo.id}"
+  network {
+		object_uuid = "${gridscale_network.foo.id}"
+		rules_v4_in {
+				order = 0
+				action = "drop"
+				dst_port = "20:80"
+				comment = "test1"
+		}
+		rules_v4_in	{
+				order = 1
+				action = "drop"
+				dst_port = "100:500"
+				comment = "test2"
+		}
+  	}
 }
 `)
 }
