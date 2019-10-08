@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"github.com/gridscale/gsclient-go"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"log"
 )
+
+var firewallRuleType = []string{"rules_v4_in", "rules_v4_out", "rules_v6_in", "rules_v6_out"}
 
 //ServerDependencyClient is an wrapper of gsclient which is used for
 //CRUD dependency of a server in gridscale terraform provider
@@ -145,27 +148,10 @@ func (c *ServerDependencyClient) LinkNetworks(ctx context.Context, isPublic bool
 		}
 		return nil
 	}
-	if attr, ok := d.GetOk("network"); ok {
-		for i, value := range attr.([]interface{}) {
+	if attrNetRel, ok := d.GetOk("network"); ok {
+		for i, value := range attrNetRel.([]interface{}) {
 			network := value.(map[string]interface{})
-			var fwRules gsclient.FirewallRules
-			var rulesv4 []gsclient.FirewallRuleProperties
-			if attr1, ok1 := d.GetOk(fmt.Sprintf("%s.%d.rules_v4_in", "network", i)); ok1 {
-				for _, value1 := range attr1.([]interface{}) {
-					rule := value1.(map[string]interface{})
-					rulesv4 = append(rulesv4, gsclient.FirewallRuleProperties{
-						Protocol: rule["protocol"].(string),
-						DstPort:  rule["dst_port"].(string),
-						SrcPort:  rule["src_port"].(string),
-						SrcCidr:  rule["src_cidr"].(string),
-						Action:   rule["action"].(string),
-						Comment:  rule["comment"].(string),
-						DstCidr:  rule["dst_cidr"].(string),
-						Order:    rule["order"].(int),
-					})
-				}
-			}
-			fwRules.RulesV4In = rulesv4
+			fwRules := readServerNetworkRelsFromResouceData(d, i)
 			err := client.LinkNetwork(
 				ctx,
 				d.Id(),
@@ -187,6 +173,43 @@ func (c *ServerDependencyClient) LinkNetworks(ctx context.Context, isPublic bool
 		}
 	}
 	return nil
+}
+
+func readServerNetworkRelsFromResouceData(d *schema.ResourceData, netId int) gsclient.FirewallRules {
+	var fwRules gsclient.FirewallRules
+	for _, ruleType := range firewallRuleType {
+		var rules []gsclient.FirewallRuleProperties
+		if rulesInTypeAttr, ok := d.GetOk(fmt.Sprintf("network.%d.%s", netId, ruleType)); ok {
+			for _, rulesInType := range rulesInTypeAttr.([]interface{}) {
+				ruleProps := rulesInType.(map[string]interface{})
+				ruleProperties := gsclient.FirewallRuleProperties{
+					Protocol: ruleProps["protocol"].(string),
+					DstPort:  ruleProps["dst_port"].(string),
+					SrcPort:  ruleProps["src_port"].(string),
+					SrcCidr:  ruleProps["src_cidr"].(string),
+					Action:   ruleProps["action"].(string),
+					Comment:  ruleProps["comment"].(string),
+					DstCidr:  ruleProps["dst_cidr"].(string),
+					Order:    ruleProps["order"].(int),
+				}
+				rules = append(rules, ruleProperties)
+			}
+		}
+		if ruleType == "rules_v4_in" {
+			fwRules.RulesV4In = rules
+			log.Printf("+++++++++++++ %s %v", ruleType, rules)
+		} else if ruleType == "rules_v4_out" {
+			fwRules.RulesV4Out = rules
+			log.Printf("+++++++++++++ %s %v", ruleType, rules)
+		} else if ruleType == "rules_v6_in" {
+			fwRules.RulesV6In = rules
+			log.Printf("+++++++++++++ %s %v", ruleType, rules)
+		} else if ruleType == "rules_v6_out" {
+			fwRules.RulesV6Out = rules
+			log.Printf("+++++++++++++ %s %v", ruleType, rules)
+		}
+	}
+	return fwRules
 }
 
 //IsShutdownRequired checks if server is needed to be shutdown when updating
