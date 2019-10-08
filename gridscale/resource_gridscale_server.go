@@ -2,6 +2,7 @@ package gridscale
 
 import (
 	"fmt"
+	resource_dependency_crud "github.com/terraform-providers/terraform-provider-gridscale/gridscale/resource-dependency-crud"
 	"log"
 	"strings"
 
@@ -127,7 +128,7 @@ func resourceGridscaleServer() *schema.Resource {
 			},
 
 			"network": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				MaxItems: 7,
 				Elem: &schema.Resource{
@@ -136,43 +137,67 @@ func resourceGridscaleServer() *schema.Resource {
 							Type:     schema.TypeString,
 							Required: true,
 						},
-						"bootdevice": {
-							Type:     schema.TypeBool,
+						//"bootdevice": {
+						//	Type:     schema.TypeBool,
+						//	Optional: true,
+						//	Default:  false,
+						//},
+						//"object_name": {
+						//	Type:     schema.TypeString,
+						//	Computed: true,
+						//},
+						//"mac": {
+						//	Type:     schema.TypeString,
+						//	Computed: true,
+						//},
+						"rules_v4_in": {
+							Type:     schema.TypeList,
 							Optional: true,
-							Default:  false,
+							Elem: &schema.Resource{
+								Schema: getFirewallRuleCommonSchema(),
+							},
 						},
-						"object_name": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"mac": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"firewall": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"firewall_template_uuid": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"partner_uuid": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"ordering": {
-							Type:     schema.TypeInt,
-							Computed: true,
-						},
-						"create_time": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"network_type": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
+						//"rules_v4_out": {
+						//	Type:     schema.TypeList,
+						//	Optional: true,
+						//	Elem: &schema.Resource{
+						//		Schema: getFirewallRuleCommonSchema(),
+						//	},
+						//},
+						//"rules_v6_in": {
+						//	Type:     schema.TypeList,
+						//	Optional: true,
+						//	Elem: &schema.Resource{
+						//		Schema: getFirewallRuleCommonSchema(),
+						//	},
+						//},
+						//"rules_v6_out": {
+						//	Type:     schema.TypeList,
+						//	Optional: true,
+						//	Elem: &schema.Resource{
+						//		Schema: getFirewallRuleCommonSchema(),
+						//	},
+						//},
+						//"firewall_template_uuid": {
+						//	Type:     schema.TypeString,
+						//	Optional: true,
+						//},
+						//"partner_uuid": {
+						//	Type:     schema.TypeString,
+						//	Computed: true,
+						//},
+						//"ordering": {
+						//	Type:     schema.TypeInt,
+						//	Computed: true,
+						//},
+						//"create_time": {
+						//	Type:     schema.TypeString,
+						//	Computed: true,
+						//},
+						//"network_type": {
+						//	Type:     schema.TypeString,
+						//	Computed: true,
+						//},
 					},
 				},
 			},
@@ -250,6 +275,87 @@ func resourceGridscaleServer() *schema.Resource {
 	}
 }
 
+func getFirewallRuleCommonSchema() map[string]*schema.Schema {
+	commonSchema := map[string]schema.Schema{
+		"order": {
+			Type: schema.TypeInt,
+			Description: `The order at which the firewall will compare packets against its rules, 
+a packet will be compared against the first rule, it will either allow it to pass or block it 
+and it won t be matched against any other rules. However, if it does no match the rule, 
+then it will proceed onto rule 2. Packets that do not match any rules are blocked by default.`,
+			Required: true,
+		},
+		"action": {
+			Type:        schema.TypeString,
+			Description: "This defines what the firewall will do. Either accept or drop.",
+			Required:    true,
+			ValidateFunc: func(v interface{}, k string) (ws []string, errors []error) {
+				valid := false
+				for _, action := range firewallActionTypes {
+					if v.(string) == action {
+						valid = true
+						break
+					}
+				}
+				if !valid {
+					errors = append(errors, fmt.Errorf("%v is not a valid firewall action. Valid firewall actions are: %v", v.(string), strings.Join(firewallActionTypes, ",")))
+				}
+				return
+			},
+		},
+		"protocol": {
+			Type:        schema.TypeString,
+			Description: "Either 'udp' or 'tcp'",
+			Optional:    true,
+			ValidateFunc: func(v interface{}, k string) (ws []string, errors []error) {
+				valid := false
+				for _, prot := range firewallRuleProtocols {
+					if v.(string) == prot {
+						valid = true
+						break
+					}
+				}
+				if !valid {
+					errors = append(errors, fmt.Errorf("%v is not a valid protocol. Valid protocols are: %v", v.(string), strings.Join(firewallRuleProtocols, ",")))
+				}
+				return
+			},
+		},
+		"dst_port": {
+			Type:        schema.TypeString,
+			Optional:    true,
+			Description: "A Number between 1 and 65535, port ranges are seperated by a colon for FTP",
+		},
+		"src_port": {
+			Type:        schema.TypeString,
+			Optional:    true,
+			Description: "A Number between 1 and 65535, port ranges are seperated by a colon for FTP",
+		},
+		"src_cidr": {
+			Type:        schema.TypeString,
+			Optional:    true,
+			Description: "Either an IPv4/6 address or and IP Network in CIDR format. If this field is empty then this service has access to all IPs.",
+		},
+		"dst_cidr": {
+			Type:        schema.TypeString,
+			Optional:    true,
+			Description: "Either an IPv4/6 address or and IP Network in CIDR format. If this field is empty then all IPs have access to this service.",
+		},
+		"comment": {
+			Type:        schema.TypeString,
+			Optional:    true,
+			Description: "Comment.",
+		},
+	}
+	schemaWithPointers := make(map[string]*schema.Schema)
+	for k, v := range commonSchema {
+		newVal := new(schema.Schema)
+		*newVal = v
+		schemaWithPointers[k] = newVal
+	}
+	return schemaWithPointers
+}
+
 func resourceGridscaleServerRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*gsclient.Client)
 	server, err := client.GetServer(emptyCtx, d.Id())
@@ -287,7 +393,7 @@ func resourceGridscaleServerRead(d *schema.ResourceData, meta interface{}) error
 		storage := map[string]interface{}{
 			"object_uuid":        value.ObjectUUID,
 			"bootdevice":         value.BootDevice,
-			"create_time":        value.CreateTime,
+			"create_time":        value.CreateTime.String(),
 			"controller":         value.Controller,
 			"target":             value.Target,
 			"lun":                value.Lun,
@@ -305,23 +411,7 @@ func resourceGridscaleServerRead(d *schema.ResourceData, meta interface{}) error
 	}
 
 	//Get networks
-	networks := make([]interface{}, 0)
-	for _, value := range server.Properties.Relations.Networks {
-		if !value.PublicNet {
-			network := map[string]interface{}{
-				"object_uuid":            value.ObjectUUID,
-				"bootdevice":             value.BootDevice,
-				"create_time":            value.CreateTime,
-				"mac":                    value.Mac,
-				"firewall":               value.Firewall,
-				"firewall_template_uuid": value.FirewallTemplateUUID,
-				"object_name":            value.ObjectName,
-				"network_type":           value.NetworkType,
-				"ordering":               value.Ordering,
-			}
-			networks = append(networks, network)
-		}
-	}
+	networks := readServerNetworkRels(server.Properties.Relations.Networks)
 	if err = d.Set("network", networks); err != nil {
 		return fmt.Errorf("Error setting network: %v", err)
 	}
@@ -348,9 +438,63 @@ func resourceGridscaleServerRead(d *schema.ResourceData, meta interface{}) error
 	return nil
 }
 
-func resourceGridscaleServerCreate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*gsclient.Client)
+func readServerNetworkRels(storages []gsclient.ServerNetworkRelationProperties) []interface{} {
+	networks := make([]interface{}, 0)
+	for _, value := range storages {
+		if !value.PublicNet {
+			network := map[string]interface{}{
+				"object_uuid": value.ObjectUUID,
+				"bootdevice":  value.BootDevice,
+				"create_time": value.CreateTime.String(),
+				"mac":         value.Mac,
+				//"firewall":               value.Firewall,
+				"firewall_template_uuid": value.FirewallTemplateUUID,
+				"object_name":            value.ObjectName,
+				"network_type":           value.NetworkType,
+				"ordering":               value.Ordering,
+			}
+			v4InRuleProps := make([]interface{}, 0)
+			v4OutRuleProps := make([]interface{}, 0)
+			v6InRuleProps := make([]interface{}, 0)
+			v6OutRuleProps := make([]interface{}, 0)
+			for _, props := range value.Firewall.RulesV4In {
+				v4InRuleProp := flattenFirewallRuleProperties(props)
+				v4InRuleProps = append(v4InRuleProps, v4InRuleProp)
+			}
+			for _, props := range value.Firewall.RulesV4Out {
+				v4OutRuleProp := flattenFirewallRuleProperties(props)
+				v4OutRuleProps = append(v4OutRuleProps, v4OutRuleProp)
+			}
+			for _, props := range value.Firewall.RulesV6In {
+				v6InRuleProp := flattenFirewallRuleProperties(props)
+				v6InRuleProps = append(v6InRuleProps, v6InRuleProp)
+			}
+			for _, props := range value.Firewall.RulesV6Out {
+				v6OutRuleProp := flattenFirewallRuleProperties(props)
+				v6OutRuleProps = append(v6OutRuleProps, v6OutRuleProp)
+			}
+			networks = append(networks, network)
+		}
+	}
+	return networks
+}
 
+func flattenFirewallRuleProperties(props gsclient.FirewallRuleProperties) map[string]interface{} {
+	return map[string]interface{}{
+		"order":    props.Order,
+		"action":   props.Action,
+		"protocol": props.Protocol,
+		"dst_port": props.DstPort,
+		"src_port": props.SrcPort,
+		"src_cidr": props.SrcCidr,
+		"dst_cidr": props.DstCidr,
+		"comment":  props.Comment,
+	}
+}
+
+func resourceGridscaleServerCreate(d *schema.ResourceData, meta interface{}) error {
+	gsc := meta.(*gsclient.Client)
+	serverDepClient := resource_dependency_crud.NewServerDepClient(gsc, d)
 	requestBody := gsclient.ServerCreateRequest{
 		Name:            d.Get("name").(string),
 		Cores:           d.Get("cores").(int),
@@ -365,126 +509,70 @@ func resourceGridscaleServerCreate(d *schema.ResourceData, meta interface{}) err
 		requestBody.HardwareProfile = gsclient.LegacyServerHardware
 	} else if profile == "nested" {
 		requestBody.HardwareProfile = gsclient.NestedServerHardware
-
 	} else if profile == "cisco_csr" {
 		requestBody.HardwareProfile = gsclient.CiscoCSRServerHardware
-
 	} else if profile == "sophos_utm" {
 		requestBody.HardwareProfile = gsclient.SophosUTMServerHardware
-
 	} else if profile == "f5_bigip" {
 		requestBody.HardwareProfile = gsclient.F5BigipServerHardware
-
 	} else if profile == "q35" {
 		requestBody.HardwareProfile = gsclient.Q35ServerHardware
-
 	} else if profile == "q35_nested" {
 		requestBody.HardwareProfile = gsclient.Q35NestedServerHardware
-
 	} else {
 		requestBody.HardwareProfile = gsclient.DefaultServerHardware
 	}
-
-	requestBody.Relations = &gsclient.ServerCreateRequestRelations{}
-	requestBody.Relations.IsoImages = []gsclient.ServerCreateRequestIsoimage{}
-	requestBody.Relations.Storages = []gsclient.ServerCreateRequestStorage{}
-	requestBody.Relations.Networks = []gsclient.ServerCreateRequestNetwork{}
-	requestBody.Relations.PublicIPs = []gsclient.ServerCreateRequestIP{}
-
-	//Add only the bootable storage during creation
-	//When more than one device is set to bootable, the API is expected to give an error
-	if attr, ok := d.GetOk("storage"); ok {
-		for _, value := range attr.(*schema.Set).List() {
-			storage := value.(map[string]interface{})
-			if storage["bootdevice"].(bool) {
-				createStorageRequest := gsclient.ServerCreateRequestStorage{
-					StorageUUID: storage["object_uuid"].(string),
-					BootDevice:  storage["bootdevice"].(bool),
-				}
-
-				requestBody.Relations.Storages = append(requestBody.Relations.Storages, createStorageRequest)
-			}
-		}
-	}
-
-	if attr, ok := d.GetOk("ipv4"); ok {
-		if client.GetIPVersion(emptyCtx, attr.(string)) != 4 {
-			return fmt.Errorf("The IP address with UUID %v is not version 4", attr.(string))
-		}
-		ip := gsclient.ServerCreateRequestIP{
-			IPaddrUUID: attr.(string),
-		}
-		requestBody.Relations.PublicIPs = append(requestBody.Relations.PublicIPs, ip)
-	}
-	if attr, ok := d.GetOk("ipv6"); ok {
-		if client.GetIPVersion(emptyCtx, attr.(string)) != 6 {
-			return fmt.Errorf("The IP address with UUID %v is not version 6", attr.(string))
-		}
-		ip := gsclient.ServerCreateRequestIP{
-			IPaddrUUID: attr.(string),
-		}
-		requestBody.Relations.PublicIPs = append(requestBody.Relations.PublicIPs, ip)
-	}
-
-	if attr, ok := d.GetOk("isoimage"); ok {
-		createIsoimageRequest := gsclient.ServerCreateRequestIsoimage{
-			IsoimageUUID: attr.(string),
-		}
-		requestBody.Relations.IsoImages = append(requestBody.Relations.IsoImages, createIsoimageRequest)
-	}
-
-	//Add public network if we have an IP
-	if len(requestBody.Relations.PublicIPs) > 0 {
-		publicNetwork, err := client.GetNetworkPublic(emptyCtx)
-		if err != nil {
-			return err
-		}
-		network := gsclient.ServerCreateRequestNetwork{
-			NetworkUUID: publicNetwork.Properties.ObjectUUID,
-		}
-		requestBody.Relations.Networks = append(requestBody.Relations.Networks, network)
-	}
-
-	if attr, ok := d.GetOk("network"); ok {
-		for _, value := range attr.(*schema.Set).List() {
-			network := value.(map[string]interface{})
-			createNetworkRequest := gsclient.ServerCreateRequestNetwork{
-				NetworkUUID: network["object_uuid"].(string),
-				BootDevice:  network["bootdevice"].(bool),
-			}
-			requestBody.Relations.Networks = append(requestBody.Relations.Networks, createNetworkRequest)
-		}
-	}
-
-	response, err := client.CreateServer(emptyCtx, requestBody)
-
+	response, err := gsc.CreateServer(emptyCtx, requestBody)
 	if err != nil {
 		return fmt.Errorf(
 			"Error waiting for server (%s) to be created: %s", requestBody.Name, err)
 	}
-
 	d.SetId(response.ServerUUID)
-
 	log.Printf("[DEBUG] The id for %s has been set to: %v", requestBody.Name, response.ServerUUID)
 
-	//Add the rest of the storages
-	//The server might not boot if more than one storages is attached to a server when it is being created. That is why the rest of the storages are added later. See BUG-191
-	if attr, ok := d.GetOk("storage"); ok {
-		for _, value := range attr.(*schema.Set).List() {
-			storage := value.(map[string]interface{})
-			if !storage["bootdevice"].(bool) {
-				err = client.LinkStorage(emptyCtx, d.Id(), storage["object_uuid"].(string), storage["bootdevice"].(bool))
-				if err != nil {
-					return err
-				}
-			}
+	//Link storages
+	err = serverDepClient.LinkStorages(emptyCtx)
+	if err != nil {
+		return err
+	}
+
+	//Link IPv4
+	err = serverDepClient.LinkIPv4(emptyCtx)
+	if err != nil {
+		return err
+	}
+
+	//Link IPv6
+	err = serverDepClient.LinkIPv6(emptyCtx)
+	if err != nil {
+		return err
+	}
+
+	//Link ISO-Image
+	err = serverDepClient.LinkISOImage(emptyCtx)
+	if err != nil {
+		return err
+	}
+
+	//Add public network if we have an IP
+	_, okv4 := d.GetOk("ipv4")
+	_, okv6 := d.GetOk("ipv6")
+	if okv4 || okv6 {
+		err = serverDepClient.LinkNetworks(emptyCtx, true)
+		if err != nil {
+			return err
 		}
+	}
+
+	err = serverDepClient.LinkNetworks(emptyCtx, false)
+	if err != nil {
+		return err
 	}
 
 	//Set the power state if needed
 	power := d.Get("power").(bool)
 	if power {
-		client.StartServer(emptyCtx, d.Id())
+		gsc.StartServer(emptyCtx, d.Id())
 	}
 
 	return resourceGridscaleServerRead(d, meta)
