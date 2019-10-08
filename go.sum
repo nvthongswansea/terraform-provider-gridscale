@@ -70,8 +70,6 @@ github.com/google/uuid v1.1.1/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+
 github.com/googleapis/gax-go/v2 v2.0.4/go.mod h1:0Wqv26UfaUD9n4G6kQubkQ+KchISgw+vpHVxEJEs9eg=
 github.com/googleapis/gax-go/v2 v2.0.5 h1:sjZBwGj9Jlw33ImPtvFviGYvseOtDM7hkSKB7+Tv3SM=
 github.com/googleapis/gax-go/v2 v2.0.5/go.mod h1:DWXyrwAJ9X0FpwwEdw+IPEYBICEFu5mhpdKc/us6bOk=
-github.com/gridscale/gsclient-go v1.0.0 h1:zQrWgeRwrL65dIMFm5X0JOFguitJGFIzNzQOKp5eWVE=
-github.com/gridscale/gsclient-go v1.0.0/go.mod h1:GqJohyXKzDhL7XBgOz3+sycVXeF8lXVdZSDcK5y8AIM=
 github.com/gridscale/gsclient-go v2.0.0+incompatible h1:3PUB4hGEK1tAMSJdQEHNc7HxY1gfFqg1fCLdN68WF5I=
 github.com/gridscale/gsclient-go v2.0.0+incompatible/go.mod h1:GqJohyXKzDhL7XBgOz3+sycVXeF8lXVdZSDcK5y8AIM=
 github.com/hashicorp/errwrap v0.0.0-20180715044906-d6c0cd880357/go.mod h1:YH+1FKiLXxHSkmPseP+kNlulaMuP3n2brvKWEqk/Jc4=
