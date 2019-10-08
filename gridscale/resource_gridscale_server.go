@@ -438,43 +438,43 @@ func resourceGridscaleServerRead(d *schema.ResourceData, meta interface{}) error
 	return nil
 }
 
-func readServerNetworkRels(storages []gsclient.ServerNetworkRelationProperties) []interface{} {
+func readServerNetworkRels(serverNetRels []gsclient.ServerNetworkRelationProperties) []interface{} {
 	networks := make([]interface{}, 0)
-	for _, value := range storages {
-		if !value.PublicNet {
+	for _, rel := range serverNetRels {
+		if !rel.PublicNet {
 			network := map[string]interface{}{
-				"object_uuid":            value.ObjectUUID,
-				"bootdevice":             value.BootDevice,
-				"create_time":            value.CreateTime.String(),
-				"mac":                    value.Mac,
-				"firewall_template_uuid": value.FirewallTemplateUUID,
-				"object_name":            value.ObjectName,
-				"network_type":           value.NetworkType,
-				"ordering":               value.Ordering,
+				"object_uuid":            rel.ObjectUUID,
+				"bootdevice":             rel.BootDevice,
+				"create_time":            rel.CreateTime.String(),
+				"mac":                    rel.Mac,
+				"firewall_template_uuid": rel.FirewallTemplateUUID,
+				"object_name":            rel.ObjectName,
+				"network_type":           rel.NetworkType,
+				"ordering":               rel.Ordering,
 			}
 			v4InRuleProps := make([]interface{}, 0)
 			v4OutRuleProps := make([]interface{}, 0)
 			v6InRuleProps := make([]interface{}, 0)
 			v6OutRuleProps := make([]interface{}, 0)
-			for _, props := range value.Firewall.RulesV4In {
+			for _, props := range rel.Firewall.RulesV4In {
 				v4InRuleProp := flattenFirewallRuleProperties(props)
 				v4InRuleProps = append(v4InRuleProps, v4InRuleProp)
 			}
 			network["rules_v4_in"] = v4InRuleProps
 
-			for _, props := range value.Firewall.RulesV4Out {
+			for _, props := range rel.Firewall.RulesV4Out {
 				v4OutRuleProp := flattenFirewallRuleProperties(props)
 				v4OutRuleProps = append(v4OutRuleProps, v4OutRuleProp)
 			}
 			network["rules_v4_out"] = v4OutRuleProps
 
-			for _, props := range value.Firewall.RulesV6In {
+			for _, props := range rel.Firewall.RulesV6In {
 				v6InRuleProp := flattenFirewallRuleProperties(props)
 				v6InRuleProps = append(v6InRuleProps, v6InRuleProp)
 			}
 			network["rules_v6_in"] = v6InRuleProps
 
-			for _, props := range value.Firewall.RulesV6Out {
+			for _, props := range rel.Firewall.RulesV6Out {
 				v6OutRuleProp := flattenFirewallRuleProperties(props)
 				v6OutRuleProps = append(v6OutRuleProps, v6OutRuleProp)
 			}
@@ -631,7 +631,7 @@ func resourceGridscaleServerUpdate(d *schema.ResourceData, meta interface{}) err
 
 	//The ShutdownServer command will check if the server is running and shut it down if it is running, so no extra checks are needed here
 	if shutdownRequired {
-		err = client.ShutdownServer(emptyCtx, d.Id())
+		err = client.StopServer(emptyCtx, d.Id())
 		if err != nil {
 			return err
 		}
