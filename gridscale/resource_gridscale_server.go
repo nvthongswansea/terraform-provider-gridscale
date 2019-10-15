@@ -646,7 +646,9 @@ func resourceGridscaleServerUpdate(d *schema.ResourceData, meta interface{}) err
 	//Link/unlink isoimages
 	if d.HasChange("isoimage") {
 		oldIso, newIso := d.GetChange("isoimage")
-		err = client.UnlinkIsoImage(emptyCtx, d.Id(), oldIso.(string))
+		if oldIso != "" {
+			err = client.UnlinkIsoImage(emptyCtx, d.Id(), oldIso.(string))
+		}
 		if newIso != "" {
 			err = client.LinkIsoImage(emptyCtx, d.Id(), newIso.(string))
 		}
