@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/gridscale/gsclient-go"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"log"
 )
 
 var firewallRuleType = []string{"rules_v4_in", "rules_v4_out", "rules_v6_in", "rules_v6_out"}
@@ -197,16 +196,12 @@ func readServerNetworkRelsFromResouceData(d *schema.ResourceData, netId int) gsc
 		}
 		if ruleType == "rules_v4_in" {
 			fwRules.RulesV4In = rules
-			log.Printf("+++++++++++++ %s %v", ruleType, rules)
 		} else if ruleType == "rules_v4_out" {
 			fwRules.RulesV4Out = rules
-			log.Printf("+++++++++++++ %s %v", ruleType, rules)
 		} else if ruleType == "rules_v6_in" {
 			fwRules.RulesV6In = rules
-			log.Printf("+++++++++++++ %s %v", ruleType, rules)
 		} else if ruleType == "rules_v6_out" {
 			fwRules.RulesV6Out = rules
-			log.Printf("+++++++++++++ %s %v", ruleType, rules)
 		}
 	}
 	return fwRules
