@@ -69,19 +69,15 @@ func resourceGridscaleServer() *schema.Resource {
 				},
 			},
 			"storage": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				MaxItems: 8,
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    8,
+				Description: "A list of storages attached to the server. The 1st storage is always the boot storage.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"object_uuid": {
 							Type:     schema.TypeString,
 							Required: true,
-						},
-						"bootdevice": {
-							Type:     schema.TypeBool,
-							Optional: true,
-							Default:  false,
 						},
 						"object_name": {
 							Type:     schema.TypeString,
@@ -392,7 +388,6 @@ func resourceGridscaleServerRead(d *schema.ResourceData, meta interface{}) error
 	for _, value := range server.Properties.Relations.Storages {
 		storage := map[string]interface{}{
 			"object_uuid":        value.ObjectUUID,
-			"bootdevice":         value.BootDevice,
 			"create_time":        value.CreateTime.String(),
 			"controller":         value.Controller,
 			"target":             value.Target,
@@ -717,11 +712,9 @@ func resourceGridscaleServerUpdate(d *schema.ResourceData, meta interface{}) err
 		oldNetworks, _ := d.GetChange("network")
 		for _, value := range oldNetworks.([]interface{}) {
 			network := value.(map[string]interface{})
-			if network["object_uuid"].(string) != "" {
-				err = client.UnlinkNetwork(emptyCtx, d.Id(), network["object_uuid"].(string))
-				if err != nil {
-					return err
-				}
+			err = client.UnlinkNetwork(emptyCtx, d.Id(), network["object_uuid"].(string))
+			if err != nil {
+				return err
 			}
 		}
 		err = serverDepClient.LinkNetworks(emptyCtx, false)
@@ -732,44 +725,20 @@ func resourceGridscaleServerUpdate(d *schema.ResourceData, meta interface{}) err
 
 	//Link/unlink storages
 	if d.HasChange("storage") {
-		oldStorages, newStorages := d.GetChange("storage")
-
-		//unlink old storages if needed
-		for _, value := range oldStorages.(*schema.Set).List() {
+		oldStorages, _ := d.GetChange("storage")
+		//unlink old storages
+		for _, value := range oldStorages.([]interface{}) {
 			oldStorage := value.(map[string]interface{})
-			unlink := true
-			for _, value := range newStorages.(*schema.Set).List() {
-				newStorage := value.(map[string]interface{})
-				if oldStorage["object_uuid"].(string) == newStorage["object_uuid"].(string) {
-					unlink = false
-					break
-				}
-			}
-			if unlink {
-				err = client.UnlinkStorage(emptyCtx, d.Id(), oldStorage["object_uuid"].(string))
-				if err != nil {
-					return err
-				}
+			err = client.UnlinkStorage(emptyCtx, d.Id(), oldStorage["object_uuid"].(string))
+			if err != nil {
+				return err
 			}
 		}
 
-		//link new storages if needed
-		for _, value := range newStorages.(*schema.Set).List() {
-			newStorage := value.(map[string]interface{})
-			link := true
-			for _, value := range oldStorages.(*schema.Set).List() {
-				oldStorage := value.(map[string]interface{})
-				if oldStorage["object_uuid"].(string) == newStorage["object_uuid"].(string) {
-					link = false
-					break
-				}
-			}
-			if link {
-				err = client.LinkStorage(emptyCtx, d.Id(), newStorage["object_uuid"].(string), newStorage["bootdevice"].(bool))
-				if err != nil {
-					return err
-				}
-			}
+		//link new storages
+		err = serverDepClient.LinkStorages(emptyCtx)
+		if err != nil {
+			return err
 		}
 	}
 

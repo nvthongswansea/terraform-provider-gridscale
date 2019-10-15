@@ -42,9 +42,9 @@ func (c *ServerDependencyClient) LinkStorages(ctx context.Context) error {
 	client := c.GetGSClient()
 	//Bootable storage has to be attached first
 	if attr, ok := d.GetOk("storage"); ok {
-		for _, value := range attr.(*schema.Set).List() {
+		for _, value := range attr.([]interface{}) {
 			storage := value.(map[string]interface{})
-			err := client.LinkStorage(ctx, d.Id(), storage["object_uuid"].(string), storage["bootdevice"].(bool))
+			err := client.LinkStorage(ctx, d.Id(), storage["object_uuid"].(string), false)
 			if err != nil {
 				return fmt.Errorf(
 					"Error waiting for storage (%s) to be attached to server (%s): %s",
