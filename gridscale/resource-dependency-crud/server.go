@@ -148,9 +148,9 @@ func (c *ServerDependencyClient) LinkNetworks(ctx context.Context, isPublic bool
 		return nil
 	}
 	if attrNetRel, ok := d.GetOk("network"); ok {
-		for i, value := range attrNetRel.([]interface{}) {
+		for _, value := range attrNetRel.([]interface{}) {
 			network := value.(map[string]interface{})
-			fwRules := readServerNetworkRelsFromResouceData(d, i)
+			fwRules := readFirewallRules(network)
 			err := client.LinkNetwork(
 				ctx,
 				d.Id(),
@@ -174,11 +174,11 @@ func (c *ServerDependencyClient) LinkNetworks(ctx context.Context, isPublic bool
 	return nil
 }
 
-func readServerNetworkRelsFromResouceData(d *schema.ResourceData, netId int) gsclient.FirewallRules {
+func readFirewallRules(netData map[string]interface{}) gsclient.FirewallRules {
 	var fwRules gsclient.FirewallRules
 	for _, ruleType := range firewallRuleType {
 		var rules []gsclient.FirewallRuleProperties
-		if rulesInTypeAttr, ok := d.GetOk(fmt.Sprintf("network.%d.%s", netId, ruleType)); ok {
+		if rulesInTypeAttr, ok := netData[ruleType]; ok {
 			for _, rulesInType := range rulesInTypeAttr.([]interface{}) {
 				ruleProps := rulesInType.(map[string]interface{})
 				ruleProperties := gsclient.FirewallRuleProperties{
