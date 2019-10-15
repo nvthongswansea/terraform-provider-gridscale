@@ -599,6 +599,7 @@ func resourceGridscaleServerDelete(d *schema.ResourceData, meta interface{}) err
 
 func resourceGridscaleServerUpdate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*gsclient.Client)
+	serverDepClient := resource_dependency_crud.NewServerDepClient(client, d)
 	shutdownRequired := false
 
 	var err error
@@ -713,8 +714,8 @@ func resourceGridscaleServerUpdate(d *schema.ResourceData, meta interface{}) err
 	//Link/unlink networks
 	//It currently unlinks and relinks all networks if any network has changed. This could probably be done better, but this way is easy and works well
 	if d.HasChange("network") {
-		oldNetworks, newNetworks := d.GetChange("network")
-		for _, value := range oldNetworks.(*schema.Set).List() {
+		oldNetworks, _ := d.GetChange("network")
+		for _, value := range oldNetworks.([]interface{}) {
 			network := value.(map[string]interface{})
 			if network["object_uuid"].(string) != "" {
 				err = client.UnlinkNetwork(emptyCtx, d.Id(), network["object_uuid"].(string))
@@ -723,15 +724,9 @@ func resourceGridscaleServerUpdate(d *schema.ResourceData, meta interface{}) err
 				}
 			}
 		}
-		for _, value := range newNetworks.(*schema.Set).List() {
-			network := value.(map[string]interface{})
-			if network["object_uuid"].(string) != "" {
-				err = client.LinkNetwork(emptyCtx, d.Id(), network["object_uuid"].(string), "", network["bootdevice"].(bool), 0, nil, nil)
-				if err != nil {
-					return err
-				}
-			}
-
+		err = serverDepClient.LinkNetworks(emptyCtx, false)
+		if err != nil {
+			return err
 		}
 	}
 
