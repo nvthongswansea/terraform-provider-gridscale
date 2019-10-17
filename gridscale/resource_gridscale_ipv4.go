@@ -2,6 +2,7 @@ package gridscale
 
 import (
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"log"
 	"time"
 
@@ -103,6 +104,16 @@ func resourceGridscaleIpv4() *schema.Resource {
 				Description: "Defines the price for the current period since the last bill.",
 				Computed:    true,
 			},
+			"server_uuid": {
+				Type:        schema.TypeString,
+				Description: "Server UUID that is related to this IP",
+				Optional:    true,
+			},
+			"loadbalancer_uuid": {
+				Type:        schema.TypeString,
+				Description: "Loadbalancer UUID that is related to this IP",
+				Optional:    true,
+			},
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Delete: schema.DefaultTimeout(time.Minute * 3),
@@ -138,6 +149,16 @@ func resourceGridscaleIpRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("usage_in_minutes", ip.Properties.UsagesInMinutes)
 	d.Set("current_price", ip.Properties.CurrentPrice)
 
+	//set related server
+	//Only one server can relate to one IP address
+	//NOTE: Only either one server or one loadbalancer relate to one IP address
+	if len(ip.Properties.Relations.Servers) == maxNumberOfServersRelatedToAnIP {
+		d.Set("server_uuid", ip.Properties.Relations.Servers[0].ServerUUID)
+	}
+	if len(ip.Properties.Relations.Loadbalancers) == maxNumberOfLBsRelatedToAnIP {
+		d.Set("loadbalancer_uuid", ip.Properties.Relations.Loadbalancers[0].LoadbalancerUUID)
+	}
+
 	if err = d.Set("labels", ip.Properties.Labels); err != nil {
 		return fmt.Errorf("Error setting labels: %v", err)
 	}
@@ -158,6 +179,74 @@ func resourceGridscaleIpUpdate(d *schema.ResourceData, meta interface{}) error {
 	err := client.UpdateIP(emptyCtx, d.Id(), requestBody)
 	if err != nil {
 		return err
+	}
+
+	//If the old server and the new server is different
+	//Turn off the old server and the new server if they are on
+	//to attach/detach IP address
+	if d.HasChange("server_uuid") {
+		oldServerUUID, newServerUUID := d.GetChange("server_uuid")
+		//If there is a server relating to this IP before updating IP,
+		//Turn off the server, then remove the link between them
+		if oldServerUUID.(string) != "" {
+			//Get server state before stopping it
+			server, err := client.GetServer(emptyCtx, oldServerUUID.(string))
+			if err != nil {
+				return err
+			}
+			resource.Retry(d.Timeout(schema.TimeoutCreate), func() *resource.RetryError {
+				err = client.StopServer(emptyCtx, oldServerUUID.(string))
+				if err != nil {
+					if requestError, ok := err.(gsclient.RequestError); ok {
+						if requestError.StatusCode == 409 {
+							return resource.RetryableError(err)
+						}
+					}
+					return resource.NonRetryableError(err)
+				}
+				return nil
+			})
+
+			err = client.DeleteServerIP(emptyCtx, oldServerUUID.(string), d.Id())
+			//If the original power state of the server is on, turn it back on
+			if server.Properties.Power {
+				resource.Retry(d.Timeout(schema.TimeoutCreate), func() *resource.RetryError {
+					err = client.StartServer(emptyCtx, oldServerUUID.(string))
+					if err != nil {
+						if requestError, ok := err.(gsclient.RequestError); ok {
+							if requestError.StatusCode == 409 {
+								return resource.RetryableError(err)
+							}
+						}
+						return resource.NonRetryableError(err)
+					}
+					return nil
+				})
+			}
+		}
+
+		if newServerUUID.(string) != "" {
+			//Get server state before stopping it
+			server, err := client.GetServer(emptyCtx, newServerUUID.(string))
+			if err != nil {
+				return err
+			}
+			err = client.StopServer(emptyCtx, newServerUUID.(string))
+			if err != nil {
+				return err
+			}
+			err = client.CreateServerIP(
+				emptyCtx,
+				newServerUUID.(string),
+				gsclient.ServerIPRelationCreateRequest{
+					ObjectUUID: d.Id(),
+				},
+			)
+			//If the original power state of the server is on, turn it back on
+			if server.Properties.Power {
+				err = client.StartServer(emptyCtx, newServerUUID.(string))
+			}
+		}
 	}
 
 	return resourceGridscaleIpRead(d, meta)
@@ -184,10 +273,77 @@ func resourceGridscaleIpv4Create(d *schema.ResourceData, meta interface{}) error
 
 	log.Printf("The id for the new Ipv%v has been set to %v", requestBody.Family, response.ObjectUUID)
 
+	//
+	if serverUUID, ok := d.GetOk("server_uuid"); ok {
+		//Get server state before stopping it
+		server, err := client.GetServer(emptyCtx, serverUUID.(string))
+		if err != nil {
+			return err
+		}
+		resource.Retry(d.Timeout(schema.TimeoutCreate), func() *resource.RetryError {
+			err = client.StopServer(emptyCtx, serverUUID.(string))
+			if err != nil {
+				if requestError, ok := err.(gsclient.RequestError); ok {
+					if requestError.StatusCode == 409 {
+						return resource.RetryableError(err)
+					}
+				}
+				return resource.NonRetryableError(err)
+			}
+			return nil
+		})
+		err = client.CreateServerIP(
+			emptyCtx,
+			serverUUID.(string),
+			gsclient.ServerIPRelationCreateRequest{
+				ObjectUUID: d.Id(),
+			},
+		)
+		//If the original power state of the server is on, turn it back on
+		if server.Properties.Power {
+			err = client.StartServer(emptyCtx, serverUUID.(string))
+		}
+	}
+
 	return resourceGridscaleIpRead(d, meta)
 }
 
 func resourceGridscaleIpDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*gsclient.Client)
+	if serverUUID, ok := d.GetOk("server_uuid"); ok {
+		//Get server state before stopping it
+		server, err := client.GetServer(emptyCtx, serverUUID.(string))
+		if err != nil {
+			return err
+		}
+		resource.Retry(d.Timeout(schema.TimeoutCreate), func() *resource.RetryError {
+			err = client.StopServer(emptyCtx, serverUUID.(string))
+			if err != nil {
+				if requestError, ok := err.(gsclient.RequestError); ok {
+					if requestError.StatusCode == 409 {
+						return resource.RetryableError(err)
+					}
+				}
+				return resource.NonRetryableError(err)
+			}
+			return nil
+		})
+		err = client.DeleteServerIP(emptyCtx, serverUUID.(string), d.Id())
+		//If the original power state of the server is on, turn it back on
+		if server.Properties.Power {
+			resource.Retry(d.Timeout(schema.TimeoutCreate), func() *resource.RetryError {
+				err = client.StartServer(emptyCtx, serverUUID.(string))
+				if err != nil {
+					if requestError, ok := err.(gsclient.RequestError); ok {
+						if requestError.StatusCode == 409 {
+							return resource.RetryableError(err)
+						}
+					}
+					return resource.NonRetryableError(err)
+				}
+				return nil
+			})
+		}
+	}
 	return client.DeleteIP(emptyCtx, d.Id())
 }

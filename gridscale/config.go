@@ -14,6 +14,11 @@ var loadbalancerAlgs = []string{"roundrobin", "leastconn"}
 var passwordTypes = []string{"plain", "crypt"}
 var emptyCtx = context.Background()
 
+const (
+	maxNumberOfServersRelatedToAnIP = 1
+	maxNumberOfLBsRelatedToAnIP     = 1
+)
+
 type Config struct {
 	UserUUID string
 	APIToken string
@@ -21,9 +26,15 @@ type Config struct {
 }
 
 func (c *Config) Client() (*gsclient.Client, error) {
-	config := gsclient.DefaultConfiguration(
+	config := gsclient.NewConfiguration(
+		c.APIUrl,
 		c.UserUUID,
 		c.APIToken,
+		true,
+		true,
+		120,
+		500,
+		10,
 	)
 	client := gsclient.NewClient(config)
 

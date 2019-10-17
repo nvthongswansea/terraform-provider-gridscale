@@ -34,8 +34,22 @@ func TestAccDataSourceGridscaleServer_Basic(t *testing.T) {
 						"gridscale_server.foo", "power", "true"),
 				),
 			},
+			//{
+			//	Config: testAccCheckDataSourceGridscaleServerConfig_basic_update(),
+			//	Check: resource.ComposeTestCheckFunc(
+			//		testAccCheckDataSourceGridscaleServerExists("gridscale_server.foo", &object),
+			//		resource.TestCheckResourceAttr(
+			//			"gridscale_server.foo", "name", "newname"),
+			//		resource.TestCheckResourceAttr(
+			//			"gridscale_server.foo", "cores", "1"),
+			//		resource.TestCheckResourceAttr(
+			//			"gridscale_server.foo", "memory", "1"),
+			//		resource.TestCheckResourceAttr(
+			//			"gridscale_server.foo", "power", "true"),
+			//	),
+			//},
 			{
-				Config: testAccCheckDataSourceGridscaleServerConfig_basic_update(),
+				Config: testAccCheckDataSourceGridscaleServerConfig_basic_update1(),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceGridscaleServerExists("gridscale_server.foo", &object),
 					resource.TestCheckResourceAttr(
@@ -48,6 +62,20 @@ func TestAccDataSourceGridscaleServer_Basic(t *testing.T) {
 						"gridscale_server.foo", "power", "true"),
 				),
 			},
+			//{
+			//	Config: testAccCheckDataSourceGridscaleServerConfig_basic_update2(),
+			//	Check: resource.ComposeTestCheckFunc(
+			//		testAccCheckDataSourceGridscaleServerExists("gridscale_server.foo1", &object),
+			//		resource.TestCheckResourceAttr(
+			//			"gridscale_server.foo1", "name", "newname"),
+			//		resource.TestCheckResourceAttr(
+			//			"gridscale_server.foo1", "cores", "1"),
+			//		resource.TestCheckResourceAttr(
+			//			"gridscale_server.foo1", "memory", "1"),
+			//		resource.TestCheckResourceAttr(
+			//			"gridscale_server.foo1", "power", "true"),
+			//	),
+			//},
 		},
 	})
 }
@@ -110,18 +138,60 @@ func testAccCheckDataSourceGridscaleServerDestroyCheck(s *terraform.State) error
 
 func testAccCheckDataSourceGridscaleServerConfig_basic(name string) string {
 	return fmt.Sprintf(`
+resource "gridscale_ipv4" "foo" {
+  name   = "%s"
+  server_uuid = gridscale_server.foo.id
+}
+
 resource "gridscale_server" "foo" {
   name   = "%s"
   cores = 2
   memory = 2
   power = true
 }
-`, name)
+`, name, name)
 }
 
 func testAccCheckDataSourceGridscaleServerConfig_basic_update() string {
 	return fmt.Sprintf(`
+resource "gridscale_ipv4" "foo" {
+  name   = "newname"
+  server_uuid = gridscale_server.foo.id
+}
+
 resource "gridscale_server" "foo" {
+  name   = "newname"
+  cores = 1
+  memory = 1
+  power = true
+}
+`)
+}
+
+func testAccCheckDataSourceGridscaleServerConfig_basic_update1() string {
+	return fmt.Sprintf(`
+resource "gridscale_ipv4" "foo1" {
+  name   = "newname"
+  server_uuid = gridscale_server.foo.id
+}
+
+resource "gridscale_server" "foo" {
+  name   = "newname"
+  cores = 1
+  memory = 1
+  power = true
+}
+`)
+}
+
+func testAccCheckDataSourceGridscaleServerConfig_basic_update2() string {
+	return fmt.Sprintf(`
+resource "gridscale_ipv4" "foo1" {
+  name   = "newname"
+  server_uuid = gridscale_server.foo1.id
+}
+
+resource "gridscale_server" "foo1" {
   name   = "newname"
   cores = 1
   memory = 1
