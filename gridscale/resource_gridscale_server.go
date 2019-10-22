@@ -8,7 +8,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/gridscale/gsclient-go"
+	"github.com/nvthongswansea/gsclient-go"
 )
 
 func resourceGridscaleServer() *schema.Resource {

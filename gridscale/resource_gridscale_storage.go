@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 
-	"github.com/gridscale/gsclient-go"
+	"github.com/nvthongswansea/gsclient-go"
 )
 
 func resourceGridscaleStorage() *schema.Resource {
@@ -277,5 +277,33 @@ func resourceGridscaleStorageCreate(d *schema.ResourceData, meta interface{}) er
 
 func resourceGridscaleStorageDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*gsclient.Client)
+	storage, err := client.GetStorage(emptyCtx, d.Id())
+	if err != nil {
+		return err
+	}
+
+	//Stop all server relating to this IP address if there is one
+	for _, server := range storage.Properties.Relations.Servers {
+		powerStatus, err := currentServersPowerStatus.getServerPowerStatus(server.ObjectUUID)
+		if err != nil {
+			return err
+		}
+		err = currentServersPowerStatus.runActionRequireServerOff(emptyCtx, client, server.ObjectUUID, func() error {
+			err = client.UnlinkStorage(emptyCtx, server.ObjectUUID, d.Id())
+			return err
+		})
+		if err != nil {
+			return err
+		}
+		//If the server was originally ON, turn it back on
+		if powerStatus {
+			err = currentServersPowerStatus.enhancedStartServer(emptyCtx, client, server.ObjectUUID)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
 	return client.DeleteStorage(emptyCtx, d.Id())
 }

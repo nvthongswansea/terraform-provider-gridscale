@@ -1,13 +1,14 @@
 package gridscale
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 
-	"github.com/gridscale/gsclient-go"
+	"github.com/nvthongswansea/gsclient-go"
 )
 
 func resourceGridscaleNetwork() *schema.Resource {
@@ -164,5 +165,37 @@ func resourceGridscaleNetworkCreate(d *schema.ResourceData, meta interface{}) er
 
 func resourceGridscaleNetworkDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*gsclient.Client)
+	net, err := client.GetNetwork(emptyCtx, d.Id())
+	if err != nil {
+		return err
+	}
+
+	//Stop all servers relating to this network address if there is one
+	for _, server := range net.Properties.Relations.Servers {
+		powerStatus, err := currentServersPowerStatus.getServerPowerStatus(server.ObjectUUID)
+		if err != nil {
+			return err
+		}
+		err = currentServersPowerStatus.runActionRequireServerOff(emptyCtx, client, server.ObjectUUID, func() error {
+			err = client.UnlinkNetwork(emptyCtx, server.ObjectUUID, d.Id())
+			return err
+		})
+		if err != nil {
+			return err
+		}
+		//If the server was originally ON, turn it back on
+		if powerStatus {
+			err = currentServersPowerStatus.enhancedStartServer(emptyCtx, client, server.ObjectUUID)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	//If there are any PaaS security zones relating to this network, return error
+	if len(net.Properties.Relations.PaaSSecurityZones) > 0 {
+		errMess := fmt.Sprintf("PaaS security zones (%v) are using this network (%v)", net.Properties.Relations.PaaSSecurityZones, d.Id())
+		return errors.New(errMess)
+	}
 	return client.DeleteNetwork(emptyCtx, d.Id())
 }

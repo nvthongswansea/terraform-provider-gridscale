@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 
-	"github.com/gridscale/gsclient-go"
+	"github.com/nvthongswansea/gsclient-go"
 )
 
 func TestAccDataSourceGridscaleServer_Basic(t *testing.T) {
@@ -118,6 +118,11 @@ resource "gridscale_network" "foo" {
   name   = "net-%s"
 }
 
+resource "gridscale_storage" "foo" {
+  name   = "storage- %s"
+  capacity = 1
+}
+
 resource "gridscale_server" "foo" {
   name   = "%s"
   cores = 2
@@ -145,8 +150,11 @@ resource "gridscale_server" "foo" {
 				comment = "test2"
 		}
   	}
+  storage {
+  	object_uuid = gridscale_storage.foo.id
+  }
 }
-`, name, name, name)
+`, name, name, name, name)
 }
 
 func testAccCheckDataSourceGridscaleServerConfig_basic_update() string {
@@ -157,6 +165,11 @@ resource "gridscale_ipv4" "foo1" {
 
 resource "gridscale_network" "foo" {
   name   = "newname"
+}
+
+resource "gridscale_storage" "foo1" {
+  name   = "newname"
+  capacity = 1
 }
 
 resource "gridscale_server" "foo" {
@@ -180,6 +193,9 @@ resource "gridscale_server" "foo" {
 				comment = "test1"
 		}
   	}
+  storage {
+  	object_uuid = gridscale_storage.foo1.id
+  }
 }
 `)
 }

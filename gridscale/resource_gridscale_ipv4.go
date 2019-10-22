@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 
-	"github.com/gridscale/gsclient-go"
+	"github.com/nvthongswansea/gsclient-go"
 )
 
 func resourceGridscaleIpv4() *schema.Resource {
@@ -217,7 +217,7 @@ func resourceGridscaleIpDelete(d *schema.ResourceData, meta interface{}) error {
 		}
 		return nil
 	}
-	//If there is a loadbalancer relating to this IP address, return error
+	//If there are any loadbalancers relating to this IP address, return error
 	if len(ip.Properties.Relations.Loadbalancers) > 0 {
 		errMess := fmt.Sprintf("Loadbalancers (%v) are using this IP (%v)", ip.Properties.Relations.Loadbalancers, d.Id())
 		return errors.New(errMess)

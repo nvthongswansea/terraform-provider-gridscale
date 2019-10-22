@@ -3,8 +3,8 @@ package resource_dependency_crud
 import (
 	"context"
 	"fmt"
-	"github.com/gridscale/gsclient-go"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/nvthongswansea/gsclient-go"
 )
 
 var firewallRuleType = []string{"rules_v4_in", "rules_v4_out", "rules_v6_in", "rules_v6_out"}
