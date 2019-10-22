@@ -151,7 +151,7 @@ resource "gridscale_server" "foo" {
 
 func testAccCheckDataSourceGridscaleServerConfig_basic_update() string {
 	return fmt.Sprintf(`
-resource "gridscale_ipv4" "foo" {
+resource "gridscale_ipv4" "foo1" {
   name   = "newname"
 }
 
@@ -164,7 +164,7 @@ resource "gridscale_server" "foo" {
   cores = 1
   memory = 1
   power = true
-  ipv4 = "${gridscale_ipv4.foo.id}"
+  ipv4 = "${gridscale_ipv4.foo1.id}"
   network {
 		object_uuid = "${gridscale_network.foo.id}"
 		rules_v4_in {

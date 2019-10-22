@@ -2,12 +2,11 @@ package gridscale
 
 import (
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	resource_dependency_crud "github.com/terraform-providers/terraform-provider-gridscale/gridscale/resource-dependency-crud"
 	"log"
 	"strings"
-
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 
 	"github.com/gridscale/gsclient-go"
 )
@@ -69,15 +68,21 @@ func resourceGridscaleServer() *schema.Resource {
 				},
 			},
 			"storage": {
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    8,
-				Description: "A list of storages attached to the server. The 1st storage is always the boot storage.",
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 8,
+				Description: `A list of storages attached to the server. 
+If no single storage is set as boot device. The 1st storage is always the boot storage.`,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"object_uuid": {
 							Type:     schema.TypeString,
 							Required: true,
+						},
+						"bootdevice": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Computed: true,
 						},
 						"object_name": {
 							Type:     schema.TypeString,
@@ -124,7 +129,7 @@ func resourceGridscaleServer() *schema.Resource {
 			},
 
 			"network": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 				MaxItems: 7,
 				Elem: &schema.Resource{
@@ -136,7 +141,7 @@ func resourceGridscaleServer() *schema.Resource {
 						"bootdevice": {
 							Type:     schema.TypeBool,
 							Optional: true,
-							Default:  false,
+							Computed: true,
 						},
 						"object_name": {
 							Type:     schema.TypeString,
@@ -271,6 +276,7 @@ func resourceGridscaleServer() *schema.Resource {
 	}
 }
 
+//getFirewallRuleCommonSchema returns schema for custom firewall rules
 func getFirewallRuleCommonSchema() map[string]*schema.Schema {
 	commonSchema := map[string]schema.Schema{
 		"order": {
@@ -388,6 +394,7 @@ func resourceGridscaleServerRead(d *schema.ResourceData, meta interface{}) error
 	for _, value := range server.Properties.Relations.Storages {
 		storage := map[string]interface{}{
 			"object_uuid":        value.ObjectUUID,
+			"bootdevice":         value.BootDevice,
 			"create_time":        value.CreateTime.String(),
 			"controller":         value.Controller,
 			"target":             value.Target,
@@ -433,54 +440,61 @@ func resourceGridscaleServerRead(d *schema.ResourceData, meta interface{}) error
 	return nil
 }
 
+//readServerNetworkRels extract relationships between server and networks
 func readServerNetworkRels(serverNetRels []gsclient.ServerNetworkRelationProperties) []interface{} {
 	networks := make([]interface{}, 0)
 	for _, rel := range serverNetRels {
-		if !rel.PublicNet {
-			network := map[string]interface{}{
-				"object_uuid":            rel.ObjectUUID,
-				"bootdevice":             rel.BootDevice,
-				"create_time":            rel.CreateTime.String(),
-				"mac":                    rel.Mac,
-				"firewall_template_uuid": rel.FirewallTemplateUUID,
-				"object_name":            rel.ObjectName,
-				"network_type":           rel.NetworkType,
-				"ordering":               rel.Ordering,
-			}
-			v4InRuleProps := make([]interface{}, 0)
-			v4OutRuleProps := make([]interface{}, 0)
-			v6InRuleProps := make([]interface{}, 0)
-			v6OutRuleProps := make([]interface{}, 0)
-			for _, props := range rel.Firewall.RulesV4In {
-				v4InRuleProp := flattenFirewallRuleProperties(props)
-				v4InRuleProps = append(v4InRuleProps, v4InRuleProp)
-			}
-			network["rules_v4_in"] = v4InRuleProps
-
-			for _, props := range rel.Firewall.RulesV4Out {
-				v4OutRuleProp := flattenFirewallRuleProperties(props)
-				v4OutRuleProps = append(v4OutRuleProps, v4OutRuleProp)
-			}
-			network["rules_v4_out"] = v4OutRuleProps
-
-			for _, props := range rel.Firewall.RulesV6In {
-				v6InRuleProp := flattenFirewallRuleProperties(props)
-				v6InRuleProps = append(v6InRuleProps, v6InRuleProp)
-			}
-			network["rules_v6_in"] = v6InRuleProps
-
-			for _, props := range rel.Firewall.RulesV6Out {
-				v6OutRuleProp := flattenFirewallRuleProperties(props)
-				v6OutRuleProps = append(v6OutRuleProps, v6OutRuleProp)
-			}
-			network["rules_v6_out"] = v6OutRuleProps
-
-			networks = append(networks, network)
+		network := map[string]interface{}{
+			"object_uuid":            rel.ObjectUUID,
+			"bootdevice":             rel.BootDevice,
+			"create_time":            rel.CreateTime.String(),
+			"mac":                    rel.Mac,
+			"firewall_template_uuid": rel.FirewallTemplateUUID,
+			"object_name":            rel.ObjectName,
+			"network_type":           rel.NetworkType,
+			"ordering":               rel.Ordering,
 		}
+		//Init all types of firewall rule
+		v4InRuleProps := make([]interface{}, 0)
+		v4OutRuleProps := make([]interface{}, 0)
+		v6InRuleProps := make([]interface{}, 0)
+		v6OutRuleProps := make([]interface{}, 0)
+
+		//Add rules of type rules_v4_in
+		for _, props := range rel.Firewall.RulesV4In {
+			v4InRuleProp := flattenFirewallRuleProperties(props)
+			v4InRuleProps = append(v4InRuleProps, v4InRuleProp)
+		}
+		network["rules_v4_in"] = v4InRuleProps
+
+		//Add rules of type rules_v4_out
+		for _, props := range rel.Firewall.RulesV4Out {
+			v4OutRuleProp := flattenFirewallRuleProperties(props)
+			v4OutRuleProps = append(v4OutRuleProps, v4OutRuleProp)
+		}
+		network["rules_v4_out"] = v4OutRuleProps
+
+		//Add rules of type rules_v6_in
+		for _, props := range rel.Firewall.RulesV6In {
+			v6InRuleProp := flattenFirewallRuleProperties(props)
+			v6InRuleProps = append(v6InRuleProps, v6InRuleProp)
+		}
+		network["rules_v6_in"] = v6InRuleProps
+
+		//Add rules of type rules_v6_out
+		for _, props := range rel.Firewall.RulesV6Out {
+			v6OutRuleProp := flattenFirewallRuleProperties(props)
+			v6OutRuleProps = append(v6OutRuleProps, v6OutRuleProp)
+		}
+		network["rules_v6_out"] = v6OutRuleProps
+
+		networks = append(networks, network)
 	}
 	return networks
 }
 
+//flattenFirewallRuleProperties converts variable of type gsclient.FirewallRuleProperties to
+//map[string]interface{}
 func flattenFirewallRuleProperties(props gsclient.FirewallRuleProperties) map[string]interface{} {
 	return map[string]interface{}{
 		"order":    props.Order,
@@ -532,6 +546,9 @@ func resourceGridscaleServerCreate(d *schema.ResourceData, meta interface{}) err
 	d.SetId(response.ServerUUID)
 	log.Printf("[DEBUG] The id for %s has been set to: %v", requestBody.Name, response.ServerUUID)
 
+	//Add server power status to currentServersPowerStatus
+	currentServersPowerStatus.addServer(d.Id())
+
 	//Link storages
 	err = serverDepClient.LinkStorages(emptyCtx)
 	if err != nil {
@@ -556,17 +573,8 @@ func resourceGridscaleServerCreate(d *schema.ResourceData, meta interface{}) err
 		return err
 	}
 
-	//Add public network if we have an IP
-	_, okv4 := d.GetOk("ipv4")
-	_, okv6 := d.GetOk("ipv6")
-	if okv4 || okv6 {
-		err = serverDepClient.LinkNetworks(emptyCtx, true)
-		if err != nil {
-			return err
-		}
-	}
-
-	err = serverDepClient.LinkNetworks(emptyCtx, false)
+	//Link networks
+	err = serverDepClient.LinkNetworks(emptyCtx)
 	if err != nil {
 		return err
 	}
@@ -574,7 +582,10 @@ func resourceGridscaleServerCreate(d *schema.ResourceData, meta interface{}) err
 	//Set the power state if needed
 	power := d.Get("power").(bool)
 	if power {
-		gsc.StartServer(emptyCtx, d.Id())
+		err = currentServersPowerStatus.enhancedStartServer(emptyCtx, gsc, d.Id())
+		if err != nil {
+			return err
+		}
 	}
 
 	return resourceGridscaleServerRead(d, meta)
@@ -588,35 +599,19 @@ func resourceGridscaleServerDelete(d *schema.ResourceData, meta interface{}) err
 		return err
 	}
 	err = client.DeleteServer(emptyCtx, id)
-
+	if err != nil {
+		return err
+	}
+	//remove server power status from currentServersPowerStatus map
+	err = currentServersPowerStatus.removeServer(d.Id())
 	return err
 }
 
 func resourceGridscaleServerUpdate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*gsclient.Client)
-	serverDepClient := resource_dependency_crud.NewServerDepClient(client, d)
-	shutdownRequired := false
-
+	gsc := meta.(*gsclient.Client)
+	serverDepClient := resource_dependency_crud.NewServerDepClient(gsc, d)
+	shutdownRequired := serverDepClient.IsShutdownRequired(emptyCtx)
 	var err error
-
-	if d.HasChange("cores") {
-		old, new := d.GetChange("cores")
-		if new.(int) < old.(int) || d.Get("legacy").(bool) { //Legacy systems don't support updating the memory while running
-			shutdownRequired = true
-		}
-	}
-
-	if d.HasChange("memory") {
-		old, new := d.GetChange("memory")
-		if new.(int) < old.(int) || d.Get("legacy").(bool) { //Legacy systems don't support updating the memory while running
-			shutdownRequired = true
-		}
-	}
-
-	if d.HasChange("ipv4") || d.HasChange("ipv6") || d.HasChange("storage") || d.HasChange("network") {
-		shutdownRequired = true
-	}
-
 	requestBody := gsclient.ServerUpdateRequest{
 		Name:            d.Get("name").(string),
 		AvailablityZone: d.Get("availability_zone").(string),
@@ -625,134 +620,63 @@ func resourceGridscaleServerUpdate(d *schema.ResourceData, meta interface{}) err
 		Memory:          d.Get("memory").(int),
 	}
 
-	//The ShutdownServer command will check if the server is running and shut it down if it is running, so no extra checks are needed here
 	if shutdownRequired {
-		err = client.StopServer(emptyCtx, d.Id())
+		err = currentServersPowerStatus.runActionRequireServerOff(emptyCtx, gsc, d.Id(), func() error {
+			//Execute the update request
+			err = gsc.UpdateServer(emptyCtx, d.Id(), requestBody)
+			if err != nil {
+				return err
+			}
+
+			//Update relationship between the server and IP addresses
+			err = serverDepClient.UpdateIPv4Rel(emptyCtx)
+			if err != nil {
+				return err
+			}
+			err = serverDepClient.UpdateIPv6Rel(emptyCtx)
+			if err != nil {
+				return err
+			}
+
+			//Update relationship between the server and networks
+			err = serverDepClient.UpdateNetworksRel(emptyCtx)
+			if err != nil {
+				return err
+			}
+
+			//Update relationship between the server and storages
+			err = serverDepClient.UpdateStoragesRel(emptyCtx)
+			return err
+		})
+		if err != nil {
+			return err
+		}
+	} else {
+		//Execute the update request
+		err = gsc.UpdateServer(emptyCtx, d.Id(), requestBody)
 		if err != nil {
 			return err
 		}
 	}
 
-	//Execute the update request
-	err = client.UpdateServer(emptyCtx, d.Id(), requestBody)
+	//Update relationship between the server and an ISO-image
+	err = serverDepClient.UpdateISOImageRel(emptyCtx)
 	if err != nil {
 		return err
-	}
-
-	//Link/unlink isoimages
-	if d.HasChange("isoimage") {
-		oldIso, newIso := d.GetChange("isoimage")
-		if oldIso != "" {
-			err = client.UnlinkIsoImage(emptyCtx, d.Id(), oldIso.(string))
-		}
-		if newIso != "" {
-			err = client.LinkIsoImage(emptyCtx, d.Id(), newIso.(string))
-		}
-		if err != nil {
-			return err
-		}
-	}
-
-	//Link/Unlink ip addresses
-	var needsPublicNetwork = true
-	if d.HasChange("ipv4") {
-		oldIp, newIp := d.GetChange("ipv4")
-		if newIp == "" {
-			err = client.UnlinkIP(emptyCtx, d.Id(), oldIp.(string))
-		} else {
-			err = client.LinkIP(emptyCtx, d.Id(), newIp.(string))
-		}
-		if err != nil {
-			return err
-		}
-		if oldIp != "" {
-			needsPublicNetwork = false
-		}
-	}
-	if d.HasChange("ipv6") {
-		oldIp, newIp := d.GetChange("ipv6")
-		if newIp == "" {
-			err = client.UnlinkIP(emptyCtx, d.Id(), oldIp.(string))
-		} else {
-			err = client.LinkIP(emptyCtx, d.Id(), newIp.(string))
-		}
-		if err != nil {
-			return err
-		}
-		if oldIp != "" {
-			needsPublicNetwork = false
-		}
-	}
-	//Disconnect from the public network if there is no longer and IP
-	if (d.HasChange("ipv6") || d.HasChange("ipv4")) && d.Get("ipv6").(string) == "" && d.Get("ipv4").(string) == "" {
-		publicNetwork, err := client.GetNetworkPublic(emptyCtx)
-		if err != nil {
-			return err
-		}
-		err = client.UnlinkNetwork(emptyCtx, d.Id(), publicNetwork.Properties.ObjectUUID)
-		if err != nil {
-			return err
-		}
-	}
-	//Connect to the public network if an IP was added
-	if (d.HasChange("ipv6") || d.HasChange("ipv4")) && needsPublicNetwork {
-		publicNetwork, err := client.GetNetworkPublic(emptyCtx)
-		if err != nil {
-			return err
-		}
-		err = client.LinkNetwork(emptyCtx, d.Id(), publicNetwork.Properties.ObjectUUID, "", false, 0, nil, nil)
-		if err != nil {
-			return err
-		}
-	}
-
-	//Link/unlink networks
-	//It currently unlinks and relinks all networks if any network has changed. This could probably be done better, but this way is easy and works well
-	if d.HasChange("network") {
-		oldNetworks, _ := d.GetChange("network")
-		for _, value := range oldNetworks.([]interface{}) {
-			network := value.(map[string]interface{})
-			err = client.UnlinkNetwork(emptyCtx, d.Id(), network["object_uuid"].(string))
-			if err != nil {
-				return err
-			}
-		}
-		err = serverDepClient.LinkNetworks(emptyCtx, false)
-		if err != nil {
-			return err
-		}
-	}
-
-	//Link/unlink storages
-	if d.HasChange("storage") {
-		oldStorages, _ := d.GetChange("storage")
-		//unlink old storages
-		for _, value := range oldStorages.([]interface{}) {
-			oldStorage := value.(map[string]interface{})
-			err = client.UnlinkStorage(emptyCtx, d.Id(), oldStorage["object_uuid"].(string))
-			if err != nil {
-				return err
-			}
-		}
-
-		//link new storages
-		err = serverDepClient.LinkStorages(emptyCtx)
-		if err != nil {
-			return err
-		}
 	}
 
 	// Make sure the server in is the expected power state.
 	// The StartServer and ShutdownServer functions do a check to see if the server isn't already running, so we don't need to do that here.
 	if d.Get("power").(bool) {
-		err = client.StartServer(emptyCtx, d.Id())
+		err = currentServersPowerStatus.enhancedStartServer(emptyCtx, gsc, d.Id())
+		if err != nil {
+			return err
+		}
 	} else {
-		err = client.ShutdownServer(emptyCtx, d.Id())
+		err = currentServersPowerStatus.enhancedStopServer(emptyCtx, gsc, d.Id())
+		if err != nil {
+			return err
+		}
 	}
-	if err != nil {
-		return err
-	}
-
 	return resourceGridscaleServerRead(d, meta)
-
 }

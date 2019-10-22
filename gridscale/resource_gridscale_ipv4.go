@@ -1,6 +1,7 @@
 package gridscale
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -189,5 +190,37 @@ func resourceGridscaleIpv4Create(d *schema.ResourceData, meta interface{}) error
 
 func resourceGridscaleIpDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*gsclient.Client)
+	ip, err := client.GetIP(emptyCtx, d.Id())
+	if err != nil {
+		return err
+	}
+	//Stop the server relating to this IP address if there is one
+	if len(ip.Properties.Relations.Servers) == 1 {
+		server := ip.Properties.Relations.Servers[0]
+		powerStatus, err := currentServersPowerStatus.getServerPowerStatus(server.ServerUUID)
+		if err != nil {
+			return err
+		}
+		err = currentServersPowerStatus.runActionRequireServerOff(emptyCtx, client, server.ServerUUID, func() error {
+			err = client.DeleteIP(emptyCtx, d.Id())
+			return err
+		})
+		if err != nil {
+			return err
+		}
+		//If the server was originally ON, turn it back on
+		if powerStatus {
+			err = currentServersPowerStatus.enhancedStartServer(emptyCtx, client, server.ServerUUID)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	//If there is a loadbalancer relating to this IP address, return error
+	if len(ip.Properties.Relations.Loadbalancers) > 0 {
+		errMess := fmt.Sprintf("Loadbalancers (%v) are using this IP (%v)", ip.Properties.Relations.Loadbalancers, d.Id())
+		return errors.New(errMess)
+	}
 	return client.DeleteIP(emptyCtx, d.Id())
 }
