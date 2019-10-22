@@ -235,8 +235,8 @@ func (c *ServerDependencyClient) UpdateISOImageRel(ctx context.Context) error {
 			err = client.UnlinkIsoImage(ctx, d.Id(), oldIso.(string))
 			if err != nil {
 				if requestError, ok := err.(gsclient.RequestError); ok {
-					//If 404, that means ISO-image is already deleted => the relation between ISO-image and server is deleted automatically
-					if requestError.StatusCode != 404 {
+					//If 404 or 409, that means ISO-image is already deleted => the relation between ISO-image and server is deleted automatically
+					if requestError.StatusCode != 404 && requestError.StatusCode != 409 {
 						return fmt.Errorf(
 							"Error waiting for ISO-image (%s) to be detached from server (%s): %s",
 							oldIso,
@@ -269,8 +269,8 @@ func (c *ServerDependencyClient) UpdateIPv4Rel(ctx context.Context) error {
 			err = client.UnlinkIP(ctx, d.Id(), oldIp.(string))
 			if err != nil {
 				if requestError, ok := err.(gsclient.RequestError); ok {
-					//If 404, that means IP is already deleted => the relation between IP and server is deleted automatically
-					if requestError.StatusCode != 404 {
+					//If 404 or 409, that means IP is already deleted => the relation between IP and server is deleted automatically
+					if requestError.StatusCode != 404 && requestError.StatusCode != 409 {
 						return fmt.Errorf(
 							"error waiting for IPv4 (%s) to be detached from server (%s): %s",
 							oldIp,
@@ -302,8 +302,8 @@ func (c *ServerDependencyClient) UpdateIPv6Rel(ctx context.Context) error {
 			err = client.UnlinkIP(ctx, d.Id(), oldIp.(string))
 			if err != nil {
 				if requestError, ok := err.(gsclient.RequestError); ok {
-					//If 404, that means IP is already deleted => the relation between IP and server is deleted automatically
-					if requestError.StatusCode != 404 {
+					//If 404 or 409, that means IP is already deleted => the relation between IP and server is deleted automatically
+					if requestError.StatusCode != 404 && requestError.StatusCode != 409 {
 						return fmt.Errorf(
 							"Error waiting for IPv6 (%s) to be detached from server (%s): %s",
 							oldIp,
@@ -336,8 +336,8 @@ func (c *ServerDependencyClient) UpdateNetworksRel(ctx context.Context) error {
 				err = client.UnlinkNetwork(ctx, d.Id(), network["object_uuid"].(string))
 				if err != nil {
 					if requestError, ok := err.(gsclient.RequestError); ok {
-						//If 404, that means network is already deleted => the relation between network and server is deleted automatically
-						if requestError.StatusCode != 404 {
+						//If 404 or 409, that means network is already deleted => the relation between network and server is deleted automatically
+						if requestError.StatusCode != 404 && requestError.StatusCode != 409 {
 							return fmt.Errorf(
 								"Error waiting for network (%s) to be detached from server (%s): %s",
 								network["object_uuid"].(string),
@@ -370,8 +370,8 @@ func (c *ServerDependencyClient) UpdateStoragesRel(ctx context.Context) error {
 				err = client.UnlinkStorage(ctx, d.Id(), storage["object_uuid"].(string))
 				if err != nil {
 					if requestError, ok := err.(gsclient.RequestError); ok {
-						//If 404, that means storage is already deleted => the relation between storage and server is deleted automatically
-						if requestError.StatusCode != 404 {
+						//If 404 or 409, that means storage is already deleted => the relation between storage and server is deleted automatically
+						if requestError.StatusCode != 404 && requestError.StatusCode != 409 {
 							return fmt.Errorf(
 								"Error waiting for storage (%s) to be detached from server (%s): %s",
 								storage["object_uuid"].(string),
