@@ -302,7 +302,6 @@ func resourceGridscaleStorageDelete(d *schema.ResourceData, meta interface{}) er
 				return err
 			}
 		}
-		return nil
 	}
 
 	return client.DeleteStorage(emptyCtx, d.Id())
