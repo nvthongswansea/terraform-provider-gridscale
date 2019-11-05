@@ -25,8 +25,6 @@ func TestAccResourceGridscalePaaS_Basic(t *testing.T) {
 					testAccCheckResourceGridscalePaaSExists("gridscale_paas.foopaas", &object),
 					resource.TestCheckResourceAttr(
 						"gridscale_paas.foopaas", "name", name),
-					resource.TestCheckResourceAttr(
-						"gridscale_paas.foopaas", "service_template_uuid", "f9625726-5ca8-4d5c-b9bd-3257e1e2211a"),
 				),
 			},
 			{
@@ -35,8 +33,6 @@ func TestAccResourceGridscalePaaS_Basic(t *testing.T) {
 					testAccCheckResourceGridscalePaaSExists("gridscale_paas.foopaas", &object),
 					resource.TestCheckResourceAttr(
 						"gridscale_paas.foopaas", "name", "newname"),
-					resource.TestCheckResourceAttr(
-						"gridscale_paas.foopaas", "service_template_uuid", "f9625726-5ca8-4d5c-b9bd-3257e1e2211a"),
 				),
 			},
 			{
@@ -45,8 +41,6 @@ func TestAccResourceGridscalePaaS_Basic(t *testing.T) {
 					testAccCheckResourceGridscalePaaSExists("gridscale_paas.foopaas", &object),
 					resource.TestCheckResourceAttr(
 						"gridscale_paas.foopaas", "name", "newname"),
-					resource.TestCheckResourceAttr(
-						"gridscale_paas.foopaas", "service_template_uuid", "136c1446-13e0-4734-bdb6-ab0a15c1d680"),
 				),
 			},
 		},
