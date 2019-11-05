@@ -59,6 +59,11 @@ func resourceGridscalePaaS() *schema.Resource {
 				ForceNew:    true,
 				Computed:    true,
 			},
+			"network_uuid": {
+				Type:        schema.TypeString,
+				Description: "Network UUID containing security zone",
+				Computed:    true,
+			},
 			"service_template_uuid": {
 				Type:         schema.TypeString,
 				Description:  "Template that PaaS service uses",
@@ -206,6 +211,22 @@ func resourceGridscalePaaSServiceRead(d *schema.ResourceData, meta interface{}) 
 	//Set labels
 	if err = d.Set("labels", props.Labels); err != nil {
 		return fmt.Errorf("Error setting labels: %v", err)
+	}
+
+	//Get all available networks
+	networks, err := client.GetNetworkList(emptyCtx)
+	if err != nil {
+		return fmt.Errorf("Error getting networks: %v", err)
+	}
+	//look for a network that the PaaS service is in
+	for _, network := range networks {
+		securityZones := network.Properties.Relations.PaaSSecurityZones
+		//Each network can contain only one security zone
+		if len(securityZones) >= 1 {
+			if securityZones[0].ObjectUUID == props.SecurityZoneUUID {
+				d.Set("network_uuid", network.Properties.ObjectUUID)
+			}
+		}
 	}
 	return nil
 }
