@@ -24,10 +24,18 @@ jobs:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
 
-    - name: Create gpg secret key file from env var
+    - name: Prepare GPG key
       env:
         GPG_SECRET: ${{ secrets.GPG_SECRET }}
-      run: touch secret.gpg && echo $GPG_SECRET > secret.gpg
-    
-    - name: Check if gpg version
-      run: gpg --version
+      run: |
+        touch ~/secret.gpg && echo $GPG_SECRET > ~/secret.gpg
+        touch ~/.gnupg/gpg-agent.conf && echo -e "default-cache-ttl 7200\nmax-cache-ttl 31536000\nallow-preset-passphrase" ~/.gnupg/gpg-agent.conf
+        gpg --batch --import ~/secret.gpg
+
+    - name: Prepare GPG passphrase
+      env:
+        GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        GPG_EMAIL: ${{ secrets.GPG_EMAIL }}
+      run: |
+        gpg --pinentry-mode=loopback --passphrase $GPG_PASSPHRASE --armor --detach-sign --local-user "${GPG_EMAIL}" README.md
+        rm -f README.md.asc
