@@ -31,9 +31,11 @@ jobs:
         gpg --batch --import ~/secret.gpg
 
     - name: Cache GPG passphrase
-      env:
-        GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        GPG_EMAIL: ${{ secrets.GPG_EMAIL }}
       run: |
-        gpg --pinentry-mode=loopback --passphrase $GPG_PASSPHRASE --armor --detach-sign --local-user "${GPG_EMAIL}" README.md
+        gpg --pinentry-mode=loopback --passphrase ${{ secrets.GPG_PASSPHRASE }} --armor --detach-sign --local-user "${{ secrets.GPG_EMAIL }}" README.md
         rm -f README.md.asc
+    
+    - name: Test GPG without passphrase (using cache)
+      run: |
+        gpg --armor --detach-sign --local-user "${{ secrets.GPG_EMAIL }}" LICENSE
+        rm -f LICENSE.asc
