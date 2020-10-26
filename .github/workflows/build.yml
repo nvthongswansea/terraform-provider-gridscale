@@ -17,12 +17,6 @@ jobs:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
 
-    - name: Install Goreleaser
-      run: |
-        curl -sfL https://install.goreleaser.com/github.com/goreleaser/goreleaser.sh | sh
-        export PATH="./bin:$PATH"
-        goreleaser -v
-
     - name: Prepare GPG key
       run: |
         touch ~/secret.gpg && echo "${{ secrets.GPG_SECRET }}" > ~/secret.gpg
@@ -38,4 +32,7 @@ jobs:
       env:
         GPG_FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
       run: |
+        curl -sfL https://install.goreleaser.com/github.com/goreleaser/goreleaser.sh | sh
+        export PATH="./bin:$PATH"
+        goreleaser -v
         goreleaser release --rm-dist
