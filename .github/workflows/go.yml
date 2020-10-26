@@ -52,7 +52,8 @@ jobs:
         gpg --pinentry-mode=loopback --passphrase ${{ secrets.GPG_PASSPHRASE }} --armor --detach-sign --local-user "${{ secrets.GPG_EMAIL }}" README.md
         rm -f README.md.asc
     
-    - name: Test GPG without passphrase (using cache)
+    - name: Build executable files
+      env:
+        GPG_FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
       run: |
-        gpg --armor --detach-sign --local-user "${{ secrets.GPG_EMAIL }}" LICENSE
-        rm -f LICENSE.asc
+        goreleaser release --rm-dist
