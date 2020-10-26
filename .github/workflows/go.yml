@@ -24,16 +24,13 @@ jobs:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
 
-    - name: Prepare GPG key 1
-      run: touch ~/secret.gpg && echo "${{ secrets.GPG_SECRET }}" > ~/secret.gpg
+    - name: Prepare GPG key
+      run: |
+        touch ~/secret.gpg && echo "${{ secrets.GPG_SECRET }}" > ~/secret.gpg
+        touch ~/.gnupg/gpg-agent.conf && echo -e "default-cache-ttl 7200\nmax-cache-ttl 31536000\nallow-preset-passphrase" ~/.gnupg/gpg-agent.conf
+        gpg --batch --import ~/secret.gpg
 
-    - name: Prepare GPG key 2
-      run: gpg --batch --import ~/secret.gpg
-
-    - name: Prepare GPG key 3
-      run: touch ~/.gnupg/gpg-agent.conf && echo -e "default-cache-ttl 7200\nmax-cache-ttl 31536000\nallow-preset-passphrase" ~/.gnupg/gpg-agent.conf
-
-    - name: Prepare GPG passphrase
+    - name: Cache GPG passphrase
       env:
         GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         GPG_EMAIL: ${{ secrets.GPG_EMAIL }}
