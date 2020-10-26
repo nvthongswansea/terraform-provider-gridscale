@@ -29,8 +29,8 @@ jobs:
         GPG_SECRET: ${{ secrets.GPG_SECRET }}
       run: |
         touch ~/secret.gpg && echo $GPG_SECRET > ~/secret.gpg
-        touch ~/.gnupg/gpg-agent.conf && echo -e "default-cache-ttl 7200\nmax-cache-ttl 31536000\nallow-preset-passphrase" ~/.gnupg/gpg-agent.conf
         gpg --batch --import ~/secret.gpg
+        touch ~/.gnupg/gpg-agent.conf && echo -e "default-cache-ttl 7200\nmax-cache-ttl 31536000\nallow-preset-passphrase" ~/.gnupg/gpg-agent.conf
 
     - name: Prepare GPG passphrase
       env:
