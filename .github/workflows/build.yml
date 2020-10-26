@@ -30,6 +30,7 @@ jobs:
     
     - name: Build executable files
       env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         GPG_FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
       run: |
         curl -sfL https://install.goreleaser.com/github.com/goreleaser/goreleaser.sh | sh
