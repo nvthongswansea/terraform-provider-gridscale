@@ -1,32 +1,14 @@
-name: Go
+name: Build
 
 on:
   push:
-    branches: [ master, testGHA ]
-  pull_request:
-    branches: [ master ]
+    tags:
+    - '*'
 
 jobs:
 
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    env:
-      GOPATH: /home/runner/go
-    steps:
-
-    - name: Set up Go 1.13
-      uses: actions/setup-go@v2
-      with:
-        go-version: ^1.13
-      id: go
-
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v2
-
   build:
     name: Publish
-    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     env:
       GOPATH: /home/runner/go
