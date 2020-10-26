@@ -27,6 +27,7 @@ jobs:
     - name: Install Goreleaser
       run: |
         curl -sfL https://install.goreleaser.com/github.com/goreleaser/goreleaser.sh | sh
+        export PATH="./bin:$PATH"
         goreleaser -v
 
     - name: Prepare GPG key
