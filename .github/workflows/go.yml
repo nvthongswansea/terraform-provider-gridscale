@@ -27,7 +27,7 @@ jobs:
     - name: Create gpg secret key file from env var
       env:
         GPG_SECRET: ${{ secrets.GPG_SECRET }}
-      run: touch secret.gpg && echo $GPG_SECRET > secret.gpg && cat secret.gpg
+      run: touch secret.gpg && echo $GPG_SECRET > secret.gpg
     
     - name: Check if gpg version
       run: gpg --version
