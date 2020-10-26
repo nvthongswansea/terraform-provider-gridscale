@@ -24,6 +24,11 @@ jobs:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
 
+    - name: Install Goreleaser
+      run: |
+        curl -sfL https://install.goreleaser.com/github.com/goreleaser/goreleaser.sh | sh
+        goreleaser -v
+
     - name: Prepare GPG key
       run: |
         touch ~/secret.gpg && echo "${{ secrets.GPG_SECRET }}" > ~/secret.gpg
