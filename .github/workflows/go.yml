@@ -26,11 +26,12 @@ jobs:
 
   build:
     name: Publish
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     env:
       GOPATH: /home/runner/go
     steps:
-      
+
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
 
