@@ -24,17 +24,18 @@ jobs:
         gpg --batch --import ~/secret.gpg
 
     - name: Cache GPG passphrase
+      env:
+        - GPG_PASSPHRASE = ${{ secrets.GPG_PASSPHRASE }}
+        - GPG_FINGERPRINT = ${{ secrets.GPG_FINGERPRINT }}
       run: |
-        gpg --pinentry-mode=loopback --passphrase ${{ secrets.GPG_PASSPHRASE }} --armor --detach-sign --local-user "${{ secrets.GPG_EMAIL }}" README.md
+        gpg --pinentry-mode=loopback --passphrase $GPG_PASSPHRASE --armor --detach-sign --local-user "${GPG_FINGERPRINT}" README.md
         rm -f README.md.asc
     
     - name: Build executable files
       env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        GPG_FINGERPRINT: ${{ secrets.GPG_EMAIL }}
+        GPG_FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
       run: |
         curl -sfL https://install.goreleaser.com/github.com/goreleaser/goreleaser.sh | sh
         export PATH="./bin:$PATH"
-        goreleaser -v
-        gpg --list-key
         goreleaser release --rm-dist
