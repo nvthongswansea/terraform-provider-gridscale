@@ -25,6 +25,8 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Create gpg secret key file from env var
+      env:
+        GPG_SECRET: ${{ secrets.GPG_SECRET }}
       run: touch secret.gpg && echo $GPG_SECRET > secret.gpg && cat secret.gpg
     
     - name: Check if gpg version
